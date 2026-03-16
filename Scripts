@@ -1,0 +1,136 @@
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local RunService = game:GetService("RunService")
+
+local gui = Instance.new("ScreenGui")
+gui.Parent = playerGui
+
+-- POSICION BASE
+local baseX = 0.33
+local baseY = 0.8
+
+-- BOTON ON/OFF
+local button = Instance.new("TextButton")
+button.Parent = gui
+button.Size = UDim2.new(0,200,0,60)
+button.Position = UDim2.new(baseX,-100,baseY,0)
+button.Text = "OFF"
+button.TextScaled = true
+button.BackgroundColor3 = Color3.fromRGB(0,0,0)
+
+local corner = Instance.new("UICorner",button)
+corner.CornerRadius = UDim.new(0,20)
+
+local stroke = Instance.new("UIStroke",button)
+stroke.Thickness = 3
+
+-- FLECHA IZQUIERDA
+local left = Instance.new("TextButton")
+left.Parent = gui
+left.Size = UDim2.new(0,50,0,60)
+left.Position = UDim2.new(baseX,120,baseY,0)
+left.Text = "<"
+left.TextScaled = true
+left.BackgroundColor3 = Color3.fromRGB(0,0,0)
+Instance.new("UICorner",left).CornerRadius = UDim.new(0,15)
+
+-- CAJA DE TEXTO (slot de codigo)
+local codeBox = Instance.new("TextBox")
+codeBox.Parent = gui
+codeBox.Size = UDim2.new(0,200,0,60)
+codeBox.Position = UDim2.new(baseX,180,baseY,0)
+codeBox.BackgroundColor3 = Color3.fromRGB(0,0,0)
+codeBox.TextColor3 = Color3.new(1,1,1)
+codeBox.TextScaled = true
+codeBox.ClearTextOnFocus = false
+
+Instance.new("UICorner",codeBox).CornerRadius = UDim.new(0,20)
+
+-- FLECHA DERECHA
+local right = Instance.new("TextButton")
+right.Parent = gui
+right.Size = UDim2.new(0,50,0,60)
+right.Position = UDim2.new(baseX,390,baseY,0)
+right.Text = ">"
+right.TextScaled = true
+right.BackgroundColor3 = Color3.fromRGB(0,0,0)
+Instance.new("UICorner",right).CornerRadius = UDim.new(0,15)
+
+-- SISTEMA DE SLOTS
+local scripts = {""}
+local index = 1
+
+local function actualizarTexto()
+	codeBox.Text = "codigo "..index
+end
+
+-- cuando haces click en la caja
+codeBox.Focused:Connect(function()
+	codeBox.Text = scripts[index]
+end)
+
+-- cuando terminas de escribir
+codeBox.FocusLost:Connect(function()
+	scripts[index] = codeBox.Text
+	actualizarTexto()
+end)
+
+left.MouseButton1Click:Connect(function()
+	scripts[index] = codeBox.Text
+	index -= 1
+	if index < 1 then
+		index = #scripts
+	end
+	actualizarTexto()
+end)
+
+right.MouseButton1Click:Connect(function()
+	scripts[index] = codeBox.Text
+	index += 1
+	if index > #scripts then
+		table.insert(scripts,"")
+	end
+	actualizarTexto()
+end)
+
+-- RGB animado
+task.spawn(function()
+	local hue = 0
+	while true do
+		hue += 0.01
+		if hue > 1 then hue = 0 end
+		
+		local color = Color3.fromHSV(hue,1,1)
+		button.TextColor3 = color
+		stroke.Color = color
+		left.TextColor3 = color
+		right.TextColor3 = color
+		
+		task.wait()
+	end
+end)
+
+-- EJECUCION
+local activo = false
+local conexion
+
+button.MouseButton1Click:Connect(function()
+	activo = not activo
+	if activo then
+		button.Text = "ON"
+		conexion = RunService.Heartbeat:Connect(function()
+			local codigo = scripts[index]
+			if codigo ~= "" then
+				local func = loadstring(codigo)
+				if func then
+					pcall(func)
+				end
+			end
+		end)
+	else
+		button.Text = "OFF"
+		if conexion then
+			conexion:Disconnect()
+		end
+	end
+end)
