@@ -3,26 +3,23 @@ local playerGui = player:WaitForChild("PlayerGui")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
--- Crear ScreenGui
 local gui = Instance.new("ScreenGui")
 gui.Parent = playerGui
 
--- Contenedor principal para mover toda la UI
 local container = Instance.new("Frame")
 container.Size = UDim2.new(1,0,1,0)
 container.BackgroundTransparency = 1
 container.Parent = gui
 
--- POSICION BASE
-local baseX = 0.33
-local baseY = 0.8
+-- Base
+local baseX, baseY = 0.33, 0.8
 
--- SISTEMA DE SLOTS
+-- Sistema de slots
 local scripts = {""}
 local index = 1
 
 -- ── BOTONES ARRIBA ──
--- Destroy UI (doble click)
+-- Destroy UI doble click
 local destroyBtn = Instance.new("TextButton")
 destroyBtn.Parent = container
 destroyBtn.Size = UDim2.new(0,60,0,30)
@@ -31,13 +28,10 @@ destroyBtn.Text = "X"
 destroyBtn.TextScaled = true
 destroyBtn.BackgroundColor3 = Color3.fromRGB(200,0,0)
 Instance.new("UICorner",destroyBtn).CornerRadius = UDim.new(0,10)
-
 local lastClick = 0
 destroyBtn.MouseButton1Click:Connect(function()
 	local time = tick()
-	if time - lastClick < 0.25 then -- doble click
-		gui:Destroy()
-	end
+	if time - lastClick < 0.25 then gui:Destroy() end
 	lastClick = time
 end)
 
@@ -73,7 +67,7 @@ Instance.new("UICorner",button).CornerRadius = UDim.new(0,20)
 local stroke = Instance.new("UIStroke",button)
 stroke.Thickness = 3
 
--- FLECHA IZQUIERDA
+-- Flechas
 local left = Instance.new("TextButton")
 left.Parent = container
 left.Size = UDim2.new(0,50,0,60)
@@ -83,7 +77,6 @@ left.TextScaled = true
 left.BackgroundColor3 = Color3.fromRGB(0,0,0)
 Instance.new("UICorner",left).CornerRadius = UDim.new(0,15)
 
--- FLECHA DERECHA
 local right = Instance.new("TextButton")
 right.Parent = container
 right.Size = UDim2.new(0,50,0,60)
@@ -93,7 +86,7 @@ right.TextScaled = true
 right.BackgroundColor3 = Color3.fromRGB(0,0,0)
 Instance.new("UICorner",right).CornerRadius = UDim.new(0,15)
 
--- ── CAJA DE TEXTO Y LABEL DE IDENTIFICACION ──
+-- ── CAJA DE TEXTO Y LABEL ──
 local codeBox = Instance.new("TextBox")
 codeBox.Parent = container
 codeBox.Size = UDim2.new(0,200,0,60)
@@ -104,7 +97,7 @@ codeBox.TextScaled = true
 codeBox.ClearTextOnFocus = false
 Instance.new("UICorner",codeBox).CornerRadius = UDim.new(0,20)
 
--- Label encima para identificar preset
+-- Label encima solo para mostrar "codigo X" sin bloquear TextBox
 local label = Instance.new("TextLabel")
 label.Parent = container
 label.Size = codeBox.Size
@@ -114,15 +107,25 @@ label.TextColor3 = Color3.new(1,1,1)
 label.TextScaled = true
 label.TextStrokeTransparency = 0.5
 label.Text = "codigo 1"
+label.Active = false
+label.Selectable = false
 label.ZIndex = codeBox.ZIndex + 1
 
 local function actualizarLabel()
 	label.Text = "codigo "..index
 end
 
--- Flechas cambian de slot sin borrar script
+-- Focus en caja
+codeBox.Focused:Connect(function()
+	codeBox.Text = scripts[index]
+end)
+codeBox.FocusLost:Connect(function()
+	scripts[index] = codeBox.Text
+end)
+
+-- Flechas cambian de slot sin borrar código
 local function cambiarSlot(direccion)
-	scripts[index] = codeBox.Text -- guardar script real
+	scripts[index] = codeBox.Text
 	index += direccion
 	if index < 1 then
 		index = #scripts
@@ -130,21 +133,12 @@ local function cambiarSlot(direccion)
 		table.insert(scripts,"")
 	end
 	actualizarLabel()
+	codeBox.Text = scripts[index]
 end
-
 left.MouseButton1Click:Connect(function() cambiarSlot(-1) end)
 right.MouseButton1Click:Connect(function() cambiarSlot(1) end)
 
--- Focus en caja
-codeBox.Focused:Connect(function()
-	codeBox.Text = scripts[index]
-end)
-
-codeBox.FocusLost:Connect(function()
-	scripts[index] = codeBox.Text
-end)
-
--- ── RGB animado para boton y flechas ──
+-- ── RGB animado ──
 task.spawn(function()
 	local hue = 0
 	while true do
@@ -162,7 +156,6 @@ end)
 -- ── EJECUCION DEL SCRIPT ──
 local activo = false
 local conexion
-
 button.MouseButton1Click:Connect(function()
 	activo = not activo
 	if activo then
@@ -171,9 +164,7 @@ button.MouseButton1Click:Connect(function()
 			local codigo = scripts[index]
 			if codigo ~= "" then
 				local func = loadstring(codigo)
-				if func then
-					pcall(func)
-				end
+				if func then pcall(func) end
 			end
 		end)
 	else
@@ -182,10 +173,9 @@ button.MouseButton1Click:Connect(function()
 	end
 end)
 
--- ── DRAGGABLE (ratón y móvil) ──
+-- ── DRAGGABLE ──
 local dragging = false
 local dragStart, startPos
-
 local function startDrag(pos)
 	if draggable then
 		dragging = true
@@ -193,7 +183,6 @@ local function startDrag(pos)
 		startPos = container.Position
 	end
 end
-
 local function updateDrag(pos)
 	if dragging then
 		local delta = pos - dragStart
@@ -201,10 +190,7 @@ local function updateDrag(pos)
 			startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 	end
 end
-
-local function endDrag()
-	dragging = false
-end
+local function endDrag() dragging = false end
 
 -- Ratón
 container.InputBegan:Connect(function(input)
@@ -217,25 +203,15 @@ container.InputBegan:Connect(function(input)
 		end)
 	end
 end)
-
 container.InputChanged:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseMovement then
-		updateDrag(input.Position)
-	end
+	if input.UserInputType == Enum.UserInputType.MouseMovement then updateDrag(input.Position) end
 end)
 
 -- Móvil
 UserInputService.TouchStarted:Connect(function(input)
-	if draggable and input.UserInputType == Enum.UserInputType.Touch then
-		startDrag(input.Position)
-	end
+	if draggable and input.UserInputType == Enum.UserInputType.Touch then startDrag(input.Position) end
 end)
 UserInputService.TouchMoved:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.Touch then
-		updateDrag(input.Position)
-	end
+	if input.UserInputType == Enum.UserInputType.Touch then updateDrag(input.Position) end
 end)
-
-UserInputService.TouchEnded:Connect(function(input)
-	endDrag()
-end)
+UserInputService.TouchEnded:Connect(function(input) endDrag() end)
