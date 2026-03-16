@@ -3,21 +3,26 @@ local playerGui = player:WaitForChild("PlayerGui")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
+-- Crear ScreenGui
 local gui = Instance.new("ScreenGui")
 gui.Parent = playerGui
 
--- POSICION BASE
-local baseX = 0.33
-local baseY = 0.8
-
--- CONTENEDOR PARA TODO
+-- Contenedor principal para mover toda la UI
 local container = Instance.new("Frame")
 container.Size = UDim2.new(1,0,1,0)
 container.BackgroundTransparency = 1
 container.Parent = gui
 
--- BOTONES ARRIBA
--- 1️⃣ Destroy UI (doble click)
+-- POSICION BASE
+local baseX = 0.33
+local baseY = 0.8
+
+-- SISTEMA DE SLOTS
+local scripts = {""}
+local index = 1
+
+-- ── BOTONES ARRIBA ──
+-- Destroy UI (doble click)
 local destroyBtn = Instance.new("TextButton")
 destroyBtn.Parent = container
 destroyBtn.Size = UDim2.new(0,60,0,30)
@@ -30,13 +35,13 @@ Instance.new("UICorner",destroyBtn).CornerRadius = UDim.new(0,10)
 local lastClick = 0
 destroyBtn.MouseButton1Click:Connect(function()
 	local time = tick()
-	if time - lastClick < 0.25 then -- doble click en menos de 0.25 seg
+	if time - lastClick < 0.25 then -- doble click
 		gui:Destroy()
 	end
 	lastClick = time
 end)
 
--- 2️⃣ Draggable UI
+-- Draggable UI
 local draggableBtn = Instance.new("TextButton")
 draggableBtn.Parent = container
 draggableBtn.Size = UDim2.new(0,60,0,30)
@@ -56,7 +61,7 @@ draggableBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
--- BOTON ON/OFF
+-- ── BOTON ON/OFF ──
 local button = Instance.new("TextButton")
 button.Parent = container
 button.Size = UDim2.new(0,200,0,60)
@@ -78,17 +83,6 @@ left.TextScaled = true
 left.BackgroundColor3 = Color3.fromRGB(0,0,0)
 Instance.new("UICorner",left).CornerRadius = UDim.new(0,15)
 
--- CAJA DE TEXTO
-local codeBox = Instance.new("TextBox")
-codeBox.Parent = container
-codeBox.Size = UDim2.new(0,200,0,60)
-codeBox.Position = UDim2.new(baseX,180,baseY,0)
-codeBox.BackgroundColor3 = Color3.fromRGB(0,0,0)
-codeBox.TextColor3 = Color3.new(1,1,1)
-codeBox.TextScaled = true
-codeBox.ClearTextOnFocus = false
-Instance.new("UICorner",codeBox).CornerRadius = UDim.new(0,20)
-
 -- FLECHA DERECHA
 local right = Instance.new("TextButton")
 right.Parent = container
@@ -99,46 +93,58 @@ right.TextScaled = true
 right.BackgroundColor3 = Color3.fromRGB(0,0,0)
 Instance.new("UICorner",right).CornerRadius = UDim.new(0,15)
 
--- SISTEMA DE SLOTS
-local scripts = {""}
-local index = 1
+-- ── CAJA DE TEXTO Y LABEL DE IDENTIFICACION ──
+local codeBox = Instance.new("TextBox")
+codeBox.Parent = container
+codeBox.Size = UDim2.new(0,200,0,60)
+codeBox.Position = UDim2.new(baseX,180,baseY,0)
+codeBox.BackgroundColor3 = Color3.fromRGB(0,0,0)
+codeBox.TextColor3 = Color3.new(1,1,1)
+codeBox.TextScaled = true
+codeBox.ClearTextOnFocus = false
+Instance.new("UICorner",codeBox).CornerRadius = UDim.new(0,20)
 
-local function actualizarTexto()
-	codeBox.Text = "codigo "..index
+-- Label encima para identificar preset
+local label = Instance.new("TextLabel")
+label.Parent = container
+label.Size = codeBox.Size
+label.Position = codeBox.Position
+label.BackgroundTransparency = 1
+label.TextColor3 = Color3.new(1,1,1)
+label.TextScaled = true
+label.TextStrokeTransparency = 0.5
+label.Text = "codigo 1"
+label.ZIndex = codeBox.ZIndex + 1
+
+local function actualizarLabel()
+	label.Text = "codigo "..index
 end
 
--- click en caja para editar
-codeBox.Focused:Connect(function()
-	codeBox.Text = scripts[index]
-end)
-
--- salir de caja
-codeBox.FocusLost:Connect(function()
-	scripts[index] = codeBox.Text
-	actualizarTexto()
-end)
-
--- flechas
+-- Flechas cambian de slot sin borrar script
 local function cambiarSlot(direccion)
-	scripts[index] = codeBox.Text -- guardar script real antes de cambiar
+	scripts[index] = codeBox.Text -- guardar script real
 	index += direccion
 	if index < 1 then
 		index = #scripts
 	elseif index > #scripts then
 		table.insert(scripts,"")
 	end
-	actualizarTexto()
+	actualizarLabel()
 end
 
-left.MouseButton1Click:Connect(function()
-	cambiarSlot(-1)
+left.MouseButton1Click:Connect(function() cambiarSlot(-1) end)
+right.MouseButton1Click:Connect(function() cambiarSlot(1) end)
+
+-- Focus en caja
+codeBox.Focused:Connect(function()
+	codeBox.Text = scripts[index]
 end)
 
-right.MouseButton1Click:Connect(function()
-	cambiarSlot(1)
+codeBox.FocusLost:Connect(function()
+	scripts[index] = codeBox.Text
 end)
 
--- RGB animado para boton y flechas
+-- ── RGB animado para boton y flechas ──
 task.spawn(function()
 	local hue = 0
 	while true do
@@ -153,7 +159,7 @@ task.spawn(function()
 	end
 end)
 
--- EJECUCION
+-- ── EJECUCION DEL SCRIPT ──
 local activo = false
 local conexion
 
@@ -172,13 +178,11 @@ button.MouseButton1Click:Connect(function()
 		end)
 	else
 		button.Text = "OFF"
-		if conexion then
-			conexion:Disconnect()
-		end
+		if conexion then conexion:Disconnect() end
 	end
 end)
 
--- DRAGGABLE compatible con móvil y ratón
+-- ── DRAGGABLE (ratón y móvil) ──
 local dragging = false
 local dragStart, startPos
 
@@ -202,7 +206,7 @@ local function endDrag()
 	dragging = false
 end
 
--- ratón
+-- Ratón
 container.InputBegan:Connect(function(input)
 	if draggable and input.UserInputType == Enum.UserInputType.MouseButton1 then
 		startDrag(input.Position)
@@ -220,7 +224,7 @@ container.InputChanged:Connect(function(input)
 	end
 end)
 
--- móvil
+-- Móvil
 UserInputService.TouchStarted:Connect(function(input)
 	if draggable and input.UserInputType == Enum.UserInputType.Touch then
 		startDrag(input.Position)
@@ -231,6 +235,7 @@ UserInputService.TouchMoved:Connect(function(input)
 		updateDrag(input.Position)
 	end
 end)
+
 UserInputService.TouchEnded:Connect(function(input)
 	endDrag()
 end)
