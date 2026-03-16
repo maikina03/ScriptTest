@@ -9,24 +9,63 @@ gui.Parent = playerGui
 local baseX = 0.33
 local baseY = 0.8
 
+-- BOTONES ARRIBA
+-- 1️⃣ Destroy UI
+local destroyBtn = Instance.new("TextButton")
+destroyBtn.Parent = gui
+destroyBtn.Size = UDim2.new(0,60,0,30)
+destroyBtn.Position = UDim2.new(baseX,-100,baseY,-40)
+destroyBtn.Text = "X"
+destroyBtn.TextScaled = true
+destroyBtn.BackgroundColor3 = Color3.fromRGB(200,0,0)
+Instance.new("UICorner",destroyBtn).CornerRadius = UDim.new(0,10)
+
+destroyBtn.MouseButton1Click:Connect(function()
+	gui:Destroy()
+end)
+
+-- 2️⃣ Draggable UI
+local draggableBtn = Instance.new("TextButton")
+draggableBtn.Parent = gui
+draggableBtn.Size = UDim2.new(0,60,0,30)
+draggableBtn.Position = UDim2.new(baseX,-30,baseY,-40)
+draggableBtn.Text = "Drag"
+draggableBtn.TextScaled = true
+draggableBtn.BackgroundColor3 = Color3.fromRGB(0,200,0)
+Instance.new("UICorner",draggableBtn).CornerRadius = UDim.new(0,10)
+
+local draggable = false
+draggableBtn.MouseButton1Click:Connect(function()
+	draggable = not draggable
+	if draggable then
+		draggableBtn.BackgroundColor3 = Color3.fromRGB(0,255,0)
+	else
+		draggableBtn.BackgroundColor3 = Color3.fromRGB(0,200,0)
+	end
+end)
+
+-- Contenedor principal de la UI para mover todo junto
+local container = Instance.new("Frame")
+container.Size = UDim2.new(1,0,1,0)
+container.BackgroundTransparency = 1
+container.Parent = gui
+
 -- BOTON ON/OFF
 local button = Instance.new("TextButton")
-button.Parent = gui
+button.Parent = container
 button.Size = UDim2.new(0,200,0,60)
 button.Position = UDim2.new(baseX,-100,baseY,0)
 button.Text = "OFF"
 button.TextScaled = true
 button.BackgroundColor3 = Color3.fromRGB(0,0,0)
-
 local corner = Instance.new("UICorner",button)
 corner.CornerRadius = UDim.new(0,20)
-
 local stroke = Instance.new("UIStroke",button)
 stroke.Thickness = 3
 
 -- FLECHA IZQUIERDA
 local left = Instance.new("TextButton")
-left.Parent = gui
+left.Parent = container
 left.Size = UDim2.new(0,50,0,60)
 left.Position = UDim2.new(baseX,120,baseY,0)
 left.Text = "<"
@@ -34,21 +73,20 @@ left.TextScaled = true
 left.BackgroundColor3 = Color3.fromRGB(0,0,0)
 Instance.new("UICorner",left).CornerRadius = UDim.new(0,15)
 
--- CAJA DE TEXTO (slot de codigo)
+-- CAJA DE TEXTO
 local codeBox = Instance.new("TextBox")
-codeBox.Parent = gui
+codeBox.Parent = container
 codeBox.Size = UDim2.new(0,200,0,60)
 codeBox.Position = UDim2.new(baseX,180,baseY,0)
 codeBox.BackgroundColor3 = Color3.fromRGB(0,0,0)
 codeBox.TextColor3 = Color3.new(1,1,1)
 codeBox.TextScaled = true
 codeBox.ClearTextOnFocus = false
-
 Instance.new("UICorner",codeBox).CornerRadius = UDim.new(0,20)
 
 -- FLECHA DERECHA
 local right = Instance.new("TextButton")
-right.Parent = gui
+right.Parent = container
 right.Size = UDim2.new(0,50,0,60)
 right.Position = UDim2.new(baseX,390,baseY,0)
 right.Text = ">"
@@ -64,17 +102,18 @@ local function actualizarTexto()
 	codeBox.Text = "codigo "..index
 end
 
--- cuando haces click en la caja
+-- click en caja para editar
 codeBox.Focused:Connect(function()
 	codeBox.Text = scripts[index]
 end)
 
--- cuando terminas de escribir
+-- salir de caja
 codeBox.FocusLost:Connect(function()
 	scripts[index] = codeBox.Text
 	actualizarTexto()
 end)
 
+-- flechas
 left.MouseButton1Click:Connect(function()
 	scripts[index] = codeBox.Text
 	index -= 1
@@ -93,19 +132,17 @@ right.MouseButton1Click:Connect(function()
 	actualizarTexto()
 end)
 
--- RGB animado
+-- RGB animado para boton y flechas
 task.spawn(function()
 	local hue = 0
 	while true do
 		hue += 0.01
 		if hue > 1 then hue = 0 end
-		
 		local color = Color3.fromHSV(hue,1,1)
 		button.TextColor3 = color
 		stroke.Color = color
 		left.TextColor3 = color
 		right.TextColor3 = color
-		
 		task.wait()
 	end
 end)
@@ -132,5 +169,36 @@ button.MouseButton1Click:Connect(function()
 		if conexion then
 			conexion:Disconnect()
 		end
+	end
+end)
+
+-- DRAGGABLE
+local dragging = false
+local dragInput, dragStart, startPos
+
+container.InputBegan:Connect(function(input)
+	if draggable and input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = container.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+container.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement then
+		dragInput = input
+	end
+end)
+
+RunService.RenderStepped:Connect(function()
+	if dragging and dragInput then
+		local delta = dragInput.Position - dragStart
+		container.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+			startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 	end
 end)
