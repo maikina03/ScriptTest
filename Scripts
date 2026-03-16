@@ -1,6 +1,7 @@
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local gui = Instance.new("ScreenGui")
 gui.Parent = playerGui
@@ -9,10 +10,16 @@ gui.Parent = playerGui
 local baseX = 0.33
 local baseY = 0.8
 
+-- CONTENEDOR PARA TODO
+local container = Instance.new("Frame")
+container.Size = UDim2.new(1,0,1,0)
+container.BackgroundTransparency = 1
+container.Parent = gui
+
 -- BOTONES ARRIBA
--- 1️⃣ Destroy UI
+-- 1️⃣ Destroy UI (doble click)
 local destroyBtn = Instance.new("TextButton")
-destroyBtn.Parent = gui
+destroyBtn.Parent = container
 destroyBtn.Size = UDim2.new(0,60,0,30)
 destroyBtn.Position = UDim2.new(baseX,-100,baseY,-40)
 destroyBtn.Text = "X"
@@ -20,13 +27,18 @@ destroyBtn.TextScaled = true
 destroyBtn.BackgroundColor3 = Color3.fromRGB(200,0,0)
 Instance.new("UICorner",destroyBtn).CornerRadius = UDim.new(0,10)
 
+local lastClick = 0
 destroyBtn.MouseButton1Click:Connect(function()
-	gui:Destroy()
+	local time = tick()
+	if time - lastClick < 0.25 then -- doble click en menos de 0.25 seg
+		gui:Destroy()
+	end
+	lastClick = time
 end)
 
 -- 2️⃣ Draggable UI
 local draggableBtn = Instance.new("TextButton")
-draggableBtn.Parent = gui
+draggableBtn.Parent = container
 draggableBtn.Size = UDim2.new(0,60,0,30)
 draggableBtn.Position = UDim2.new(baseX,-30,baseY,-40)
 draggableBtn.Text = "Drag"
@@ -44,12 +56,6 @@ draggableBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
--- Contenedor principal de la UI para mover todo junto
-local container = Instance.new("Frame")
-container.Size = UDim2.new(1,0,1,0)
-container.BackgroundTransparency = 1
-container.Parent = gui
-
 -- BOTON ON/OFF
 local button = Instance.new("TextButton")
 button.Parent = container
@@ -58,8 +64,7 @@ button.Position = UDim2.new(baseX,-100,baseY,0)
 button.Text = "OFF"
 button.TextScaled = true
 button.BackgroundColor3 = Color3.fromRGB(0,0,0)
-local corner = Instance.new("UICorner",button)
-corner.CornerRadius = UDim.new(0,20)
+Instance.new("UICorner",button).CornerRadius = UDim.new(0,20)
 local stroke = Instance.new("UIStroke",button)
 stroke.Thickness = 3
 
@@ -114,22 +119,23 @@ codeBox.FocusLost:Connect(function()
 end)
 
 -- flechas
-left.MouseButton1Click:Connect(function()
-	scripts[index] = codeBox.Text
-	index -= 1
+local function cambiarSlot(direccion)
+	scripts[index] = codeBox.Text -- guardar script real antes de cambiar
+	index += direccion
 	if index < 1 then
 		index = #scripts
-	end
-	actualizarTexto()
-end)
-
-right.MouseButton1Click:Connect(function()
-	scripts[index] = codeBox.Text
-	index += 1
-	if index > #scripts then
+	elseif index > #scripts then
 		table.insert(scripts,"")
 	end
 	actualizarTexto()
+end
+
+left.MouseButton1Click:Connect(function()
+	cambiarSlot(-1)
+end)
+
+right.MouseButton1Click:Connect(function()
+	cambiarSlot(1)
 end)
 
 -- RGB animado para boton y flechas
@@ -172,18 +178,37 @@ button.MouseButton1Click:Connect(function()
 	end
 end)
 
--- DRAGGABLE
+-- DRAGGABLE compatible con móvil y ratón
 local dragging = false
-local dragInput, dragStart, startPos
+local dragStart, startPos
 
+local function startDrag(pos)
+	if draggable then
+		dragging = true
+		dragStart = pos
+		startPos = container.Position
+	end
+end
+
+local function updateDrag(pos)
+	if dragging then
+		local delta = pos - dragStart
+		container.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+			startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	end
+end
+
+local function endDrag()
+	dragging = false
+end
+
+-- ratón
 container.InputBegan:Connect(function(input)
 	if draggable and input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = true
-		dragStart = input.Position
-		startPos = container.Position
+		startDrag(input.Position)
 		input.Changed:Connect(function()
 			if input.UserInputState == Enum.UserInputState.End then
-				dragging = false
+				endDrag()
 			end
 		end)
 	end
@@ -191,14 +216,21 @@ end)
 
 container.InputChanged:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseMovement then
-		dragInput = input
+		updateDrag(input.Position)
 	end
 end)
 
-RunService.RenderStepped:Connect(function()
-	if dragging and dragInput then
-		local delta = dragInput.Position - dragStart
-		container.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
-			startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+-- móvil
+UserInputService.TouchStarted:Connect(function(input)
+	if draggable and input.UserInputType == Enum.UserInputType.Touch then
+		startDrag(input.Position)
 	end
+end)
+UserInputService.TouchMoved:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.Touch then
+		updateDrag(input.Position)
+	end
+end)
+UserInputService.TouchEnded:Connect(function(input)
+	endDrag()
 end)
