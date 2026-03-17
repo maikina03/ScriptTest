@@ -15,8 +15,19 @@ local baseX, baseY = 0.33, 0.8
 local scripts = {""}
 local index = 1
 
--- FUNCIÓN PARA CREAR BOTONES NEGROS CON BORDE RGB (solo borde, texto sin borde)
-local function crearBoton(size, pos, text)
+-- FUNCIÓN PARA CREAR BOTÓN NEGRO CON BORDE RGB DETRÁS
+local function crearBotonConBorde(size, pos, text)
+	-- BORDE RGB (solo visual, más grande que el botón)
+	local borde = Instance.new("Frame")
+	borde.Size = UDim2.new(size.X.Scale, size.X.Offset+4, size.Y.Scale, size.Y.Offset+4)
+	borde.Position = UDim2.new(pos.X.Scale, pos.X.Offset-2, pos.Y.Scale, pos.Y.Offset-2)
+	borde.BackgroundColor3 = Color3.new(1,1,1)
+	borde.BorderSizePixel = 0
+	borde.Parent = container
+	local cornerBorde = Instance.new("UICorner", borde)
+	cornerBorde.CornerRadius = UDim.new(0,12)
+
+	-- BOTÓN NEGRO ENCIMA
 	local btn = Instance.new("TextButton")
 	btn.Size = size
 	btn.Position = pos
@@ -25,22 +36,19 @@ local function crearBoton(size, pos, text)
 	btn.BackgroundColor3 = Color3.fromRGB(0,0,0)
 	btn.TextColor3 = Color3.fromRGB(255,255,255)
 	btn.Parent = container
-	
-	local corner = Instance.new("UICorner", btn)
-	corner.CornerRadius = UDim.new(0,12)
+	local cornerBtn = Instance.new("UICorner", btn)
+	cornerBtn.CornerRadius = UDim.new(0,12)
 
-	local stroke = Instance.new("UIStroke", btn)
-	stroke.Thickness = 2 -- Borde RGB SOLO en botón
-	return btn, stroke
+	return btn, borde
 end
 
 -- BOTONES
-local destroyBtn, strokeDestroy = crearBoton(UDim2.new(0,60,0,30), UDim2.new(baseX,-100,baseY,-40), "X")
-local draggableBtn, strokeDrag = crearBoton(UDim2.new(0,60,0,30), UDim2.new(baseX,-30,baseY,-40), "Drag")
-local autoBtn, strokeAuto = crearBoton(UDim2.new(0,60,0,30), UDim2.new(baseX,40,baseY,-40), "Auto")
-local button, strokeMain = crearBoton(UDim2.new(0,200,0,60), UDim2.new(baseX,-100,baseY,0), "OFF")
-local left, strokeLeft = crearBoton(UDim2.new(0,50,0,60), UDim2.new(baseX,120,baseY,0), "<")
-local right, strokeRight = crearBoton(UDim2.new(0,50,0,60), UDim2.new(baseX,390,baseY,0), ">")
+local destroyBtn, destroyBorde = crearBotonConBorde(UDim2.new(0,60,0,30), UDim2.new(baseX,-100,baseY,-40), "X")
+local draggableBtn, dragBorde = crearBotonConBorde(UDim2.new(0,60,0,30), UDim2.new(baseX,-30,baseY,-40), "Drag")
+local autoBtn, autoBorde = crearBotonConBorde(UDim2.new(0,60,0,30), UDim2.new(baseX,40,baseY,-40), "Auto")
+local button, mainBorde = crearBotonConBorde(UDim2.new(0,200,0,60), UDim2.new(baseX,-100,baseY,0), "OFF")
+local left, leftBorde = crearBotonConBorde(UDim2.new(0,50,0,60), UDim2.new(baseX,120,baseY,0), "<")
+local right, rightBorde = crearBotonConBorde(UDim2.new(0,50,0,60), UDim2.new(baseX,390,baseY,0), ">")
 
 -- CAJA DE TEXTO
 local codeBox = Instance.new("TextBox")
@@ -167,7 +175,7 @@ button.MouseButton1Click:Connect(function()
 	end
 end)
 
--- RGB ANIMADO (TEXTO + BOTONES)
+-- RGB ANIMADO (TEXTO + BORDES DETRÁS)
 task.spawn(function()
 	local hue = 0
 	while true do
@@ -180,17 +188,17 @@ task.spawn(function()
 		left.TextColor3 = color
 		right.TextColor3 = color
 		destroyBtn.TextColor3 = color
+		draggableBtn.TextColor3 = draggable and Color3.fromRGB(0,255,0) or color
+		autoBtn.TextColor3 = auto and Color3.fromRGB(0,255,0) or color
 		label.TextColor3 = color
-		if not draggable then draggableBtn.TextColor3 = color end
-		if not auto then autoBtn.TextColor3 = color end
 
-		-- BORDES RGB SOLO EN BOTONES
-		strokeMain.Color = color
-		strokeLeft.Color = color
-		strokeRight.Color = color
-		strokeDestroy.Color = color
-		strokeDrag.Color = color
-		strokeAuto.Color = color
+		-- BORDES DETRÁS RGB
+		mainBorde.BackgroundColor3 = color
+		leftBorde.BackgroundColor3 = color
+		rightBorde.BackgroundColor3 = color
+		destroyBorde.BackgroundColor3 = color
+		dragBorde.BackgroundColor3 = color
+		autoBorde.BackgroundColor3 = color
 		strokeBox.Color = color
 
 		task.wait()
