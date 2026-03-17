@@ -152,7 +152,7 @@ local visible = true
 destroyBtn.MouseButton1Click:Connect(function()
 	visible = not visible
 	for _,v in pairs(container:GetChildren()) do
-		if v ~= destroyBtn then v.Visible = visible end
+		if v ~= destroyBtn and v ~= destroyBorde then v.Visible = visible end
 	end
 end)
 
@@ -204,10 +204,3 @@ task.spawn(function()
 		task.wait()
 	end
 end)
-
--- BOTÓN X CON BORDE DETRÁS
-local destroyBtn, destroyBorde = crearBotonConBorde(
-    UDim2.new(0,60,0,30),    -- tamaño
-    UDim2.new(baseX,-100,baseY,-40), -- posición
-    "X"                        -- texto
-)
