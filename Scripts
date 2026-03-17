@@ -18,8 +18,7 @@ local baseX, baseY = 0.33, 0.8
 local scripts = {""}
 local index = 1
 
--- ── BOTONES ARRIBA ──
--- Destroy UI doble click
+-- ── BOTÓN X (doble click) ──
 local destroyBtn = Instance.new("TextButton")
 destroyBtn.Parent = container
 destroyBtn.Size = UDim2.new(0,60,0,30)
@@ -28,14 +27,17 @@ destroyBtn.Text = "X"
 destroyBtn.TextScaled = true
 destroyBtn.BackgroundColor3 = Color3.fromRGB(200,0,0)
 Instance.new("UICorner",destroyBtn).CornerRadius = UDim.new(0,10)
+
 local lastClick = 0
 destroyBtn.MouseButton1Click:Connect(function()
 	local time = tick()
-	if time - lastClick < 0.25 then gui:Destroy() end
+	if time - lastClick < 0.25 then
+		gui:Destroy()
+	end
 	lastClick = time
 end)
 
--- Draggable UI
+-- ── BOTÓN DRAG ──
 local draggableBtn = Instance.new("TextButton")
 draggableBtn.Parent = container
 draggableBtn.Size = UDim2.new(0,60,0,30)
@@ -48,14 +50,10 @@ Instance.new("UICorner",draggableBtn).CornerRadius = UDim.new(0,10)
 local draggable = false
 draggableBtn.MouseButton1Click:Connect(function()
 	draggable = not draggable
-	if draggable then
-		draggableBtn.BackgroundColor3 = Color3.fromRGB(0,255,0)
-	else
-		draggableBtn.BackgroundColor3 = Color3.fromRGB(0,200,0)
-	end
+	draggableBtn.BackgroundColor3 = draggable and Color3.fromRGB(0,255,0) or Color3.fromRGB(0,200,0)
 end)
 
--- ── BOTON ON/OFF ──
+-- ── BOTÓN ON/OFF ──
 local button = Instance.new("TextButton")
 button.Parent = container
 button.Size = UDim2.new(0,200,0,60)
@@ -64,6 +62,7 @@ button.Text = "OFF"
 button.TextScaled = true
 button.BackgroundColor3 = Color3.fromRGB(0,0,0)
 Instance.new("UICorner",button).CornerRadius = UDim.new(0,20)
+
 local stroke = Instance.new("UIStroke",button)
 stroke.Thickness = 3
 
@@ -86,7 +85,7 @@ right.TextScaled = true
 right.BackgroundColor3 = Color3.fromRGB(0,0,0)
 Instance.new("UICorner",right).CornerRadius = UDim.new(0,15)
 
--- ── CAJA DE TEXTO Y LABEL ──
+-- ── CAJA DE TEXTO ──
 local codeBox = Instance.new("TextBox")
 codeBox.Parent = container
 codeBox.Size = UDim2.new(0,200,0,60)
@@ -95,9 +94,10 @@ codeBox.BackgroundColor3 = Color3.fromRGB(0,0,0)
 codeBox.TextColor3 = Color3.new(1,1,1)
 codeBox.TextScaled = true
 codeBox.ClearTextOnFocus = false
+codeBox.TextTransparency = 1 -- 🔥 oculto por defecto
 Instance.new("UICorner",codeBox).CornerRadius = UDim.new(0,20)
 
--- Label encima solo para mostrar "codigo X" sin bloquear TextBox
+-- Label encima
 local label = Instance.new("TextLabel")
 label.Parent = container
 label.Size = codeBox.Size
@@ -108,37 +108,47 @@ label.TextScaled = true
 label.TextStrokeTransparency = 0.5
 label.Text = "codigo 1"
 label.Active = false
-label.Selectable = false
 label.ZIndex = codeBox.ZIndex + 1
 
 local function actualizarLabel()
 	label.Text = "codigo "..index
 end
 
--- Focus en caja
+-- Eventos caja (🔥 FIX IMPORTANTE)
 codeBox.Focused:Connect(function()
+	codeBox.TextTransparency = 0
 	codeBox.Text = scripts[index]
 end)
+
 codeBox.FocusLost:Connect(function()
 	scripts[index] = codeBox.Text
+	codeBox.TextTransparency = 1
 end)
 
--- Flechas cambian de slot sin borrar código
+-- Flechas
 local function cambiarSlot(direccion)
 	scripts[index] = codeBox.Text
 	index += direccion
+	
 	if index < 1 then
 		index = #scripts
 	elseif index > #scripts then
 		table.insert(scripts,"")
 	end
+	
 	actualizarLabel()
 	codeBox.Text = scripts[index]
 end
-left.MouseButton1Click:Connect(function() cambiarSlot(-1) end)
-right.MouseButton1Click:Connect(function() cambiarSlot(1) end)
 
--- ── RGB animado ──
+left.MouseButton1Click:Connect(function()
+	cambiarSlot(-1)
+end)
+
+right.MouseButton1Click:Connect(function()
+	cambiarSlot(1)
+end)
+
+-- RGB animado
 task.spawn(function()
 	local hue = 0
 	while true do
@@ -153,18 +163,22 @@ task.spawn(function()
 	end
 end)
 
--- ── EJECUCION DEL SCRIPT ──
+-- Ejecutar código
 local activo = false
 local conexion
+
 button.MouseButton1Click:Connect(function()
 	activo = not activo
+	
 	if activo then
 		button.Text = "ON"
 		conexion = RunService.Heartbeat:Connect(function()
 			local codigo = scripts[index]
 			if codigo ~= "" then
 				local func = loadstring(codigo)
-				if func then pcall(func) end
+				if func then
+					pcall(func)
+				end
 			end
 		end)
 	else
@@ -173,9 +187,10 @@ button.MouseButton1Click:Connect(function()
 	end
 end)
 
--- ── DRAGGABLE ──
+-- Drag (móvil + PC)
 local dragging = false
 local dragStart, startPos
+
 local function startDrag(pos)
 	if draggable then
 		dragging = true
@@ -183,35 +198,45 @@ local function startDrag(pos)
 		startPos = container.Position
 	end
 end
+
 local function updateDrag(pos)
 	if dragging then
 		local delta = pos - dragStart
-		container.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
-			startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+		container.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
 	end
 end
-local function endDrag() dragging = false end
+
+local function endDrag()
+	dragging = false
+end
 
 -- Ratón
 container.InputBegan:Connect(function(input)
 	if draggable and input.UserInputType == Enum.UserInputType.MouseButton1 then
 		startDrag(input.Position)
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				endDrag()
-			end
-		end)
 	end
 end)
+
 container.InputChanged:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseMovement then updateDrag(input.Position) end
+	if input.UserInputType == Enum.UserInputType.MouseMovement then
+		updateDrag(input.Position)
+	end
 end)
 
 -- Móvil
 UserInputService.TouchStarted:Connect(function(input)
-	if draggable and input.UserInputType == Enum.UserInputType.Touch then startDrag(input.Position) end
+	if draggable then startDrag(input.Position) end
 end)
+
 UserInputService.TouchMoved:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.Touch then updateDrag(input.Position) end
+	updateDrag(input.Position)
 end)
-UserInputService.TouchEnded:Connect(function(input) endDrag() end)
+
+UserInputService.TouchEnded:Connect(function()
+	endDrag()
+end)
