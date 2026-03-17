@@ -16,7 +16,7 @@ local baseX, baseY = 0.33, 0.8
 local scripts = {""}
 local index = 1
 
--- ── BOTÓN X ──
+-- ── BOTÓN X (toggle UI) ──
 local destroyBtn = Instance.new("TextButton")
 destroyBtn.Parent = container
 destroyBtn.Size = UDim2.new(0,60,0,30)
@@ -27,11 +27,16 @@ destroyBtn.TextSize = 18
 destroyBtn.BackgroundColor3 = Color3.fromRGB(0,0,0)
 Instance.new("UICorner",destroyBtn).CornerRadius = UDim.new(0,10)
 
-local lastClick = 0
+local uiVisible = true
+
 destroyBtn.MouseButton1Click:Connect(function()
-	local time = tick()
-	if time - lastClick < 0.25 then gui:Destroy() end
-	lastClick = time
+	uiVisible = not uiVisible
+	
+	for _,v in pairs(container:GetChildren()) do
+		if v ~= destroyBtn then
+			v.Visible = uiVisible
+		end
+	end
 end)
 
 -- ── BOTÓN DRAG ──
@@ -40,7 +45,6 @@ draggableBtn.Parent = container
 draggableBtn.Size = UDim2.new(0,60,0,30)
 draggableBtn.Position = UDim2.new(baseX,-30,baseY,-40)
 draggableBtn.Text = "Drag"
-draggableBtn.TextScaled = false
 draggableBtn.TextSize = 18
 draggableBtn.BackgroundColor3 = Color3.fromRGB(0,0,0)
 Instance.new("UICorner",draggableBtn).CornerRadius = UDim.new(0,10)
@@ -48,7 +52,6 @@ Instance.new("UICorner",draggableBtn).CornerRadius = UDim.new(0,10)
 local draggable = false
 draggableBtn.MouseButton1Click:Connect(function()
 	draggable = not draggable
-	
 	if draggable then
 		draggableBtn.TextColor3 = Color3.fromRGB(0,255,0)
 	end
@@ -60,7 +63,6 @@ autoBtn.Parent = container
 autoBtn.Size = UDim2.new(0,60,0,30)
 autoBtn.Position = UDim2.new(baseX,40,baseY,-40)
 autoBtn.Text = "Auto"
-autoBtn.TextScaled = false
 autoBtn.TextSize = 18
 autoBtn.BackgroundColor3 = Color3.fromRGB(0,0,0)
 Instance.new("UICorner",autoBtn).CornerRadius = UDim.new(0,10)
@@ -70,7 +72,6 @@ local direction = 1
 
 autoBtn.MouseButton1Click:Connect(function()
 	auto = not auto
-	
 	if auto then
 		autoBtn.TextColor3 = Color3.fromRGB(0,255,0)
 	end
@@ -82,13 +83,12 @@ button.Parent = container
 button.Size = UDim2.new(0,200,0,60)
 button.Position = UDim2.new(baseX,-100,baseY,0)
 button.Text = "OFF"
-button.TextScaled = false
 button.TextSize = 20
 button.BackgroundColor3 = Color3.fromRGB(0,0,0)
 Instance.new("UICorner",button).CornerRadius = UDim.new(0,20)
 
-local stroke = Instance.new("UIStroke",button)
-stroke.Thickness = 3
+local strokeMain = Instance.new("UIStroke",button)
+strokeMain.Thickness = 2
 
 -- Flechas
 local left = Instance.new("TextButton")
@@ -96,20 +96,32 @@ left.Parent = container
 left.Size = UDim2.new(0,50,0,60)
 left.Position = UDim2.new(baseX,120,baseY,0)
 left.Text = "<"
-left.TextScaled = false
 left.TextSize = 20
 left.BackgroundColor3 = Color3.fromRGB(0,0,0)
 Instance.new("UICorner",left).CornerRadius = UDim.new(0,15)
+local strokeLeft = Instance.new("UIStroke",left)
+strokeLeft.Thickness = 2
 
 local right = Instance.new("TextButton")
 right.Parent = container
 right.Size = UDim2.new(0,50,0,60)
 right.Position = UDim2.new(baseX,390,baseY,0)
 right.Text = ">"
-right.TextScaled = false
 right.TextSize = 20
 right.BackgroundColor3 = Color3.fromRGB(0,0,0)
 Instance.new("UICorner",right).CornerRadius = UDim.new(0,15)
+local strokeRight = Instance.new("UIStroke",right)
+strokeRight.Thickness = 2
+
+-- Bordes también en botones pequeños
+local strokeDestroy = Instance.new("UIStroke",destroyBtn)
+strokeDestroy.Thickness = 2
+
+local strokeDrag = Instance.new("UIStroke",draggableBtn)
+strokeDrag.Thickness = 2
+
+local strokeAuto = Instance.new("UIStroke",autoBtn)
+strokeAuto.Thickness = 2
 
 -- ── CAJA DE TEXTO ──
 local codeBox = Instance.new("TextBox")
@@ -118,11 +130,11 @@ codeBox.Size = UDim2.new(0,200,0,60)
 codeBox.Position = UDim2.new(baseX,180,baseY,0)
 codeBox.BackgroundColor3 = Color3.fromRGB(0,0,0)
 codeBox.TextColor3 = Color3.new(1,1,1)
-codeBox.TextScaled = false
 codeBox.TextSize = 18
-codeBox.ClearTextOnFocus = false
 codeBox.TextTransparency = 1
 Instance.new("UICorner",codeBox).CornerRadius = UDim.new(0,20)
+local strokeBox = Instance.new("UIStroke",codeBox)
+strokeBox.Thickness = 2
 
 -- Label
 local label = Instance.new("TextLabel")
@@ -130,9 +142,7 @@ label.Parent = container
 label.Size = codeBox.Size
 label.Position = codeBox.Position
 label.BackgroundTransparency = 1
-label.TextScaled = false
 label.TextSize = 18
-label.TextStrokeTransparency = 0.5
 label.Text = "codigo 1"
 label.Active = false
 label.ZIndex = codeBox.ZIndex + 1
@@ -175,7 +185,6 @@ task.spawn(function()
 	while true do
 		if auto and #scripts > 1 then
 			task.wait(5)
-			
 			scripts[index] = codeBox.Text
 			index += direction
 			
@@ -195,7 +204,7 @@ task.spawn(function()
 	end
 end)
 
--- RGB LOOP
+-- RGB LOOP (texto + bordes)
 task.spawn(function()
 	local hue = 0
 	while true do
@@ -204,12 +213,13 @@ task.spawn(function()
 		local color = Color3.fromHSV(hue,1,1)
 
 		button.TextColor3 = color
-		stroke.Color = color
+		label.TextColor3 = color
+
 		left.TextColor3 = color
 		right.TextColor3 = color
-		label.TextColor3 = color
-		destroyBtn.TextColor3 = color
 
+		destroyBtn.TextColor3 = color
+		
 		if not draggable then
 			draggableBtn.TextColor3 = color
 		end
@@ -217,6 +227,15 @@ task.spawn(function()
 		if not auto then
 			autoBtn.TextColor3 = color
 		end
+
+		-- bordes RGB
+		strokeMain.Color = color
+		strokeLeft.Color = color
+		strokeRight.Color = color
+		strokeDestroy.Color = color
+		strokeDrag.Color = color
+		strokeAuto.Color = color
+		strokeBox.Color = color
 
 		task.wait()
 	end
