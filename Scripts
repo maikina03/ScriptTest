@@ -1,4 +1,3 @@
--- SCRIPT COMPLETO FINAL RGB TEXTO + BOTONES
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local RunService = game:GetService("RunService")
@@ -16,7 +15,7 @@ local baseX, baseY = 0.33, 0.8
 local scripts = {""}
 local index = 1
 
--- FUNCIÓN PARA CREAR BOTONES NEGROS CON BORDE RGB
+-- FUNCIÓN PARA CREAR BOTONES NEGROS CON BORDE RGB (solo borde, texto sin borde)
 local function crearBoton(size, pos, text)
 	local btn = Instance.new("TextButton")
 	btn.Size = size
@@ -31,8 +30,7 @@ local function crearBoton(size, pos, text)
 	corner.CornerRadius = UDim.new(0,12)
 
 	local stroke = Instance.new("UIStroke", btn)
-	stroke.Thickness = 2
-	
+	stroke.Thickness = 2 -- Borde RGB SOLO en botón
 	return btn, stroke
 end
 
@@ -57,7 +55,7 @@ Instance.new("UICorner",codeBox).CornerRadius = UDim.new(0,12)
 local strokeBox = Instance.new("UIStroke", codeBox)
 strokeBox.Thickness = 2
 
--- LABEL (codigo 1,2…)
+-- LABEL
 local label = Instance.new("TextLabel")
 label.Parent = container
 label.Size = codeBox.Size
@@ -186,7 +184,7 @@ task.spawn(function()
 		if not draggable then draggableBtn.TextColor3 = color end
 		if not auto then autoBtn.TextColor3 = color end
 
-		-- BORDES RGB
+		-- BORDES RGB SOLO EN BOTONES
 		strokeMain.Color = color
 		strokeLeft.Color = color
 		strokeRight.Color = color
