@@ -204,3 +204,10 @@ task.spawn(function()
 		task.wait()
 	end
 end)
+
+-- BOTÓN X CON BORDE DETRÁS
+local destroyBtn, destroyBorde = crearBotonConBorde(
+    UDim2.new(0,60,0,30),    -- tamaño
+    UDim2.new(baseX,-100,baseY,-40), -- posición
+    "X"                        -- texto
+)
