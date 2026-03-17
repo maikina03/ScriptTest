@@ -15,29 +15,25 @@ local baseX, baseY = 0.33, 0.8
 local scripts = {""}
 local index = 1
 
--- FUNCIÓN PARA CREAR BOTÓN NEGRO CON BORDE RGB DETRÁS
+-- FUNCIÓN BOTÓN CON BORDE
 local function crearBotonConBorde(size, pos, text)
-	-- BORDE RGB (solo visual, más grande que el botón)
 	local borde = Instance.new("Frame")
 	borde.Size = UDim2.new(size.X.Scale, size.X.Offset+4, size.Y.Scale, size.Y.Offset+4)
 	borde.Position = UDim2.new(pos.X.Scale, pos.X.Offset-2, pos.Y.Scale, pos.Y.Offset-2)
 	borde.BackgroundColor3 = Color3.new(1,1,1)
 	borde.BorderSizePixel = 0
 	borde.Parent = container
-	local cornerBorde = Instance.new("UICorner", borde)
-	cornerBorde.CornerRadius = UDim.new(0,12)
+	Instance.new("UICorner", borde).CornerRadius = UDim.new(0,12)
 
-	-- BOTÓN NEGRO ENCIMA
 	local btn = Instance.new("TextButton")
 	btn.Size = size
 	btn.Position = pos
 	btn.Text = text
-	btn.TextSize = 18
+	btn.TextSize = 16
 	btn.BackgroundColor3 = Color3.fromRGB(0,0,0)
-	btn.TextColor3 = Color3.fromRGB(255,255,255)
+	btn.TextColor3 = Color3.new(1,1,1)
 	btn.Parent = container
-	local cornerBtn = Instance.new("UICorner", btn)
-	cornerBtn.CornerRadius = UDim.new(0,12)
+	Instance.new("UICorner", btn).CornerRadius = UDim.new(0,12)
 
 	return btn, borde
 end
@@ -58,55 +54,54 @@ codeBox.Position = UDim2.new(baseX,180,baseY,0)
 codeBox.BackgroundColor3 = Color3.fromRGB(0,0,0)
 codeBox.TextColor3 = Color3.new(1,1,1)
 codeBox.Text = ""
-codeBox.PlaceholderText = ""
+codeBox.ClearTextOnFocus = true
+codeBox.TextTransparency = 1 -- 🔥 SIEMPRE INVISIBLE
 Instance.new("UICorner",codeBox).CornerRadius = UDim.new(0,12)
+
 local strokeBox = Instance.new("UIStroke", codeBox)
 strokeBox.Thickness = 2
 
--- LABEL
+-- LABEL (VISIBLE)
 local label = Instance.new("TextLabel")
 label.Parent = container
 label.Size = codeBox.Size
 label.Position = codeBox.Position
 label.BackgroundTransparency = 1
 label.Text = "codigo 1"
-label.TextColor3 = Color3.new(1,1,1)
-label.TextSize = 18
+label.TextSize = 16
 label.ZIndex = codeBox.ZIndex + 1
 
 local function actualizarLabel()
 	label.Text = "codigo "..index
 end
 
--- EVENTOS CAJA
+-- INPUT SIN MOSTRAR TEXTO
 codeBox.Focused:Connect(function()
 	codeBox.Text = scripts[index]
-	label.Visible = false
 end)
 
-codeBox.FocusLost:Connect(function()
+codeBox:GetPropertyChangedSignal("Text"):Connect(function()
 	scripts[index] = codeBox.Text
-	label.Visible = true
 end)
 
--- CAMBIO DE SLOTS
-local function cambiarSlot(direccion)
-	scripts[index] = codeBox.Text
-	index += direccion
+-- CAMBIO SLOT
+local function cambiarSlot(d)
+	index += d
 	if index < 1 then index = #scripts
 	elseif index > #scripts then table.insert(scripts,"") end
 	actualizarLabel()
 	codeBox.Text = scripts[index]
 end
+
 left.MouseButton1Click:Connect(function() cambiarSlot(-1) end)
 right.MouseButton1Click:Connect(function() cambiarSlot(1) end)
 
 -- AUTO
 local auto = false
 local direction = 1
+
 autoBtn.MouseButton1Click:Connect(function()
 	auto = not auto
-	autoBtn.TextColor3 = auto and Color3.fromRGB(0,255,0) or Color3.new(1,1,1)
 end)
 
 task.spawn(function()
@@ -115,58 +110,77 @@ task.spawn(function()
 			task.wait(5)
 			cambiarSlot(direction)
 			if index == #scripts then direction = -1
-			elseif index == 1 then direction = 1
-			end
+			elseif index == 1 then direction = 1 end
 		else
 			task.wait(0.5)
 		end
 	end
 end)
 
--- DRAG
+-- DRAG (MÓVIL)
 local draggable = false
 draggableBtn.MouseButton1Click:Connect(function()
 	draggable = not draggable
-	draggableBtn.TextColor3 = draggable and Color3.fromRGB(0,255,0) or Color3.new(1,1,1)
 end)
 
-local dragging, dragStart, startPos = false, nil, nil
-local function startDrag(pos)
-	if draggable then dragging = true; dragStart = pos; startPos = container.Position end
-end
-local function updateDrag(pos)
-	if dragging then
-		local delta = pos - dragStart
-		container.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-	end
-end
-local function endDrag() dragging = false end
-UserInputService.TouchStarted:Connect(function(i) startDrag(i.Position) end)
-UserInputService.TouchMoved:Connect(function(i) updateDrag(i.Position) end)
-UserInputService.TouchEnded:Connect(endDrag)
-container.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then startDrag(i.Position) end end)
-container.InputChanged:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseMovement then updateDrag(i.Position) end end)
+local dragging = false
+local dragStart
 
--- X toggle UI
-local visible = true
-destroyBtn.MouseButton1Click:Connect(function()
-	visible = not visible
-	for _,v in pairs(container:GetChildren()) do
-		if v ~= destroyBtn and v ~= destroyBorde then v.Visible = visible end
+UserInputService.TouchStarted:Connect(function(i)
+	if draggable then dragging = true dragStart = i.Position end
+end)
+
+UserInputService.TouchMoved:Connect(function(i)
+	if dragging then
+		local delta = i.Position - dragStart
+		container.Position += UDim2.new(0,delta.X,0,delta.Y)
+		dragStart = i.Position
 	end
+end)
+
+UserInputService.TouchEnded:Connect(function()
+	dragging = false
+end)
+
+-- X BOTÓN (CLICK Y DOBLE CLICK)
+local visible = true
+local lastClick = 0
+
+destroyBtn.MouseButton1Click:Connect(function()
+	local now = tick()
+
+	if now - lastClick < 0.3 then
+		-- DOBLE CLICK → DESTRUIR TODO
+		if button.Text == "ON" then
+			button.Text = "OFF"
+		end
+		gui:Destroy()
+	else
+		-- CLICK NORMAL → OCULTAR
+		visible = not visible
+		for _,v in pairs(container:GetChildren()) do
+			if v ~= destroyBtn and v ~= destroyBorde then
+				v.Visible = visible
+			end
+		end
+	end
+
+	lastClick = now
 end)
 
 -- ON/OFF
 local activo, conexion = false, nil
+
 button.MouseButton1Click:Connect(function()
 	activo = not activo
+
 	if activo then
 		button.Text = "ON"
 		conexion = RunService.Heartbeat:Connect(function()
 			local codigo = scripts[index]
 			if codigo ~= "" then
-				local func = loadstring(codigo)
-				if func then pcall(func) end
+				local f = loadstring(codigo)
+				if f then pcall(f) end
 			end
 		end)
 	else
@@ -175,31 +189,30 @@ button.MouseButton1Click:Connect(function()
 	end
 end)
 
--- RGB ANIMADO (TEXTO + BORDES DETRÁS)
+-- RGB
 task.spawn(function()
-	local hue = 0
+	local h = 0
 	while true do
-		hue += 0.01
-		if hue > 1 then hue = 0 end
-		local color = Color3.fromHSV(hue,1,1)
+		h += 0.01
+		if h > 1 then h = 0 end
+		local c = Color3.fromHSV(h,1,1)
 
-		-- TEXTO RGB
-		button.TextColor3 = color
-		left.TextColor3 = color
-		right.TextColor3 = color
-		destroyBtn.TextColor3 = color
-		draggableBtn.TextColor3 = draggable and Color3.fromRGB(0,255,0) or color
-		autoBtn.TextColor3 = auto and Color3.fromRGB(0,255,0) or color
-		label.TextColor3 = color
+		button.TextColor3 = c
+		left.TextColor3 = c
+		right.TextColor3 = c
+		destroyBtn.TextColor3 = c
+		label.TextColor3 = c
 
-		-- BORDES DETRÁS RGB
-		mainBorde.BackgroundColor3 = color
-		leftBorde.BackgroundColor3 = color
-		rightBorde.BackgroundColor3 = color
-		destroyBorde.BackgroundColor3 = color
-		dragBorde.BackgroundColor3 = color
-		autoBorde.BackgroundColor3 = color
-		strokeBox.Color = color
+		draggableBtn.TextColor3 = draggable and Color3.fromRGB(0,255,0) or c
+		autoBtn.TextColor3 = auto and Color3.fromRGB(0,255,0) or c
+
+		mainBorde.BackgroundColor3 = c
+		leftBorde.BackgroundColor3 = c
+		rightBorde.BackgroundColor3 = c
+		destroyBorde.BackgroundColor3 = c
+		dragBorde.BackgroundColor3 = c
+		autoBorde.BackgroundColor3 = c
+		strokeBox.Color = c
 
 		task.wait()
 	end
