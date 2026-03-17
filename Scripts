@@ -15,12 +15,11 @@ local baseX, baseY = 0.33, 0.8
 local scripts = {""}
 local index = 1
 
--- FUNCIÓN BOTÓN CON BORDE
+-- BOTÓN CON BORDE
 local function crearBotonConBorde(size, pos, text)
 	local borde = Instance.new("Frame")
 	borde.Size = UDim2.new(size.X.Scale, size.X.Offset+4, size.Y.Scale, size.Y.Offset+4)
 	borde.Position = UDim2.new(pos.X.Scale, pos.X.Offset-2, pos.Y.Scale, pos.Y.Offset-2)
-	borde.BackgroundColor3 = Color3.new(1,1,1)
 	borde.BorderSizePixel = 0
 	borde.Parent = container
 	Instance.new("UICorner", borde).CornerRadius = UDim.new(0,12)
@@ -46,22 +45,21 @@ local button, mainBorde = crearBotonConBorde(UDim2.new(0,200,0,60), UDim2.new(ba
 local left, leftBorde = crearBotonConBorde(UDim2.new(0,50,0,60), UDim2.new(baseX,120,baseY,0), "<")
 local right, rightBorde = crearBotonConBorde(UDim2.new(0,50,0,60), UDim2.new(baseX,390,baseY,0), ">")
 
--- CAJA DE TEXTO
+-- TEXTBOX (INVISIBLE REAL)
 local codeBox = Instance.new("TextBox")
 codeBox.Parent = container
 codeBox.Size = UDim2.new(0,200,0,60)
 codeBox.Position = UDim2.new(baseX,180,baseY,0)
 codeBox.BackgroundColor3 = Color3.fromRGB(0,0,0)
-codeBox.TextColor3 = Color3.new(1,1,1)
 codeBox.Text = ""
-codeBox.ClearTextOnFocus = true
-codeBox.TextTransparency = 1 -- 🔥 SIEMPRE INVISIBLE
+codeBox.TextTransparency = 1
+codeBox.ClearTextOnFocus = false
 Instance.new("UICorner",codeBox).CornerRadius = UDim.new(0,12)
 
 local strokeBox = Instance.new("UIStroke", codeBox)
 strokeBox.Thickness = 2
 
--- LABEL (VISIBLE)
+-- LABEL
 local label = Instance.new("TextLabel")
 label.Parent = container
 label.Size = codeBox.Size
@@ -75,13 +73,18 @@ local function actualizarLabel()
 	label.Text = "codigo "..index
 end
 
--- INPUT SIN MOSTRAR TEXTO
+-- 🔥 INPUT INVISIBLE REAL (ARREGLADO)
+codeBox.Text = ""
+
 codeBox.Focused:Connect(function()
-	codeBox.Text = scripts[index]
+	codeBox.Text = ""
 end)
 
 codeBox:GetPropertyChangedSignal("Text"):Connect(function()
-	scripts[index] = codeBox.Text
+	if codeBox.Text ~= "" then
+		scripts[index] = scripts[index] .. codeBox.Text
+		codeBox.Text = "" -- 🔥 borra instantáneo
+	end
 end)
 
 -- CAMBIO SLOT
@@ -90,7 +93,6 @@ local function cambiarSlot(d)
 	if index < 1 then index = #scripts
 	elseif index > #scripts then table.insert(scripts,"") end
 	actualizarLabel()
-	codeBox.Text = scripts[index]
 end
 
 left.MouseButton1Click:Connect(function() cambiarSlot(-1) end)
@@ -117,7 +119,7 @@ task.spawn(function()
 	end
 end)
 
--- DRAG (MÓVIL)
+-- DRAG
 local draggable = false
 draggableBtn.MouseButton1Click:Connect(function()
 	draggable = not draggable
@@ -142,7 +144,7 @@ UserInputService.TouchEnded:Connect(function()
 	dragging = false
 end)
 
--- X BOTÓN (CLICK Y DOBLE CLICK)
+-- X BOTÓN
 local visible = true
 local lastClick = 0
 
@@ -150,13 +152,8 @@ destroyBtn.MouseButton1Click:Connect(function()
 	local now = tick()
 
 	if now - lastClick < 0.3 then
-		-- DOBLE CLICK → DESTRUIR TODO
-		if button.Text == "ON" then
-			button.Text = "OFF"
-		end
 		gui:Destroy()
 	else
-		-- CLICK NORMAL → OCULTAR
 		visible = not visible
 		for _,v in pairs(container:GetChildren()) do
 			if v ~= destroyBtn and v ~= destroyBorde then
