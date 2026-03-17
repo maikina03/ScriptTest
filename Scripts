@@ -11,10 +11,8 @@ container.Size = UDim2.new(1,0,1,0)
 container.BackgroundTransparency = 1
 container.Parent = gui
 
--- Base
 local baseX, baseY = 0.33, 0.8
 
--- Sistema de slots
 local scripts = {""}
 local index = 1
 
@@ -24,17 +22,15 @@ destroyBtn.Parent = container
 destroyBtn.Size = UDim2.new(0,60,0,30)
 destroyBtn.Position = UDim2.new(baseX,-100,baseY,-40)
 destroyBtn.Text = "X"
-destroyBtn.TextScaled = true
+destroyBtn.TextScaled = false
+destroyBtn.TextSize = 18
 destroyBtn.BackgroundColor3 = Color3.fromRGB(0,0,0)
-destroyBtn.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner",destroyBtn).CornerRadius = UDim.new(0,10)
 
 local lastClick = 0
 destroyBtn.MouseButton1Click:Connect(function()
 	local time = tick()
-	if time - lastClick < 0.25 then
-		gui:Destroy()
-	end
+	if time - lastClick < 0.25 then gui:Destroy() end
 	lastClick = time
 end)
 
@@ -44,14 +40,18 @@ draggableBtn.Parent = container
 draggableBtn.Size = UDim2.new(0,60,0,30)
 draggableBtn.Position = UDim2.new(baseX,-30,baseY,-40)
 draggableBtn.Text = "Drag"
-draggableBtn.TextScaled = true
+draggableBtn.TextScaled = false
+draggableBtn.TextSize = 18
 draggableBtn.BackgroundColor3 = Color3.fromRGB(0,0,0)
-draggableBtn.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner",draggableBtn).CornerRadius = UDim.new(0,10)
 
 local draggable = false
 draggableBtn.MouseButton1Click:Connect(function()
 	draggable = not draggable
+	
+	if draggable then
+		draggableBtn.TextColor3 = Color3.fromRGB(0,255,0)
+	end
 end)
 
 -- ── BOTÓN AUTO ──
@@ -60,9 +60,9 @@ autoBtn.Parent = container
 autoBtn.Size = UDim2.new(0,60,0,30)
 autoBtn.Position = UDim2.new(baseX,40,baseY,-40)
 autoBtn.Text = "Auto"
-autoBtn.TextScaled = true
+autoBtn.TextScaled = false
+autoBtn.TextSize = 18
 autoBtn.BackgroundColor3 = Color3.fromRGB(0,0,0)
-autoBtn.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner",autoBtn).CornerRadius = UDim.new(0,10)
 
 local auto = false
@@ -70,6 +70,10 @@ local direction = 1
 
 autoBtn.MouseButton1Click:Connect(function()
 	auto = not auto
+	
+	if auto then
+		autoBtn.TextColor3 = Color3.fromRGB(0,255,0)
+	end
 end)
 
 -- ── BOTÓN ON/OFF ──
@@ -78,9 +82,9 @@ button.Parent = container
 button.Size = UDim2.new(0,200,0,60)
 button.Position = UDim2.new(baseX,-100,baseY,0)
 button.Text = "OFF"
-button.TextScaled = true
+button.TextScaled = false
+button.TextSize = 20
 button.BackgroundColor3 = Color3.fromRGB(0,0,0)
-button.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner",button).CornerRadius = UDim.new(0,20)
 
 local stroke = Instance.new("UIStroke",button)
@@ -92,9 +96,9 @@ left.Parent = container
 left.Size = UDim2.new(0,50,0,60)
 left.Position = UDim2.new(baseX,120,baseY,0)
 left.Text = "<"
-left.TextScaled = true
+left.TextScaled = false
+left.TextSize = 20
 left.BackgroundColor3 = Color3.fromRGB(0,0,0)
-left.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner",left).CornerRadius = UDim.new(0,15)
 
 local right = Instance.new("TextButton")
@@ -102,9 +106,9 @@ right.Parent = container
 right.Size = UDim2.new(0,50,0,60)
 right.Position = UDim2.new(baseX,390,baseY,0)
 right.Text = ">"
-right.TextScaled = true
+right.TextScaled = false
+right.TextSize = 20
 right.BackgroundColor3 = Color3.fromRGB(0,0,0)
-right.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner",right).CornerRadius = UDim.new(0,15)
 
 -- ── CAJA DE TEXTO ──
@@ -114,7 +118,8 @@ codeBox.Size = UDim2.new(0,200,0,60)
 codeBox.Position = UDim2.new(baseX,180,baseY,0)
 codeBox.BackgroundColor3 = Color3.fromRGB(0,0,0)
 codeBox.TextColor3 = Color3.new(1,1,1)
-codeBox.TextScaled = true
+codeBox.TextScaled = false
+codeBox.TextSize = 18
 codeBox.ClearTextOnFocus = false
 codeBox.TextTransparency = 1
 Instance.new("UICorner",codeBox).CornerRadius = UDim.new(0,20)
@@ -125,8 +130,8 @@ label.Parent = container
 label.Size = codeBox.Size
 label.Position = codeBox.Position
 label.BackgroundTransparency = 1
-label.TextColor3 = Color3.new(1,1,1)
-label.TextScaled = true
+label.TextScaled = false
+label.TextSize = 18
 label.TextStrokeTransparency = 0.5
 label.Text = "codigo 1"
 label.Active = false
@@ -162,13 +167,8 @@ local function cambiarSlot(direccion)
 	codeBox.Text = scripts[index]
 end
 
-left.MouseButton1Click:Connect(function()
-	cambiarSlot(-1)
-end)
-
-right.MouseButton1Click:Connect(function()
-	cambiarSlot(1)
-end)
+left.MouseButton1Click:Connect(function() cambiarSlot(-1) end)
+right.MouseButton1Click:Connect(function() cambiarSlot(1) end)
 
 -- AUTO LOOP
 task.spawn(function()
@@ -195,7 +195,7 @@ task.spawn(function()
 	end
 end)
 
--- RGB GLOBAL
+-- RGB LOOP
 task.spawn(function()
 	local hue = 0
 	while true do
@@ -208,10 +208,15 @@ task.spawn(function()
 		left.TextColor3 = color
 		right.TextColor3 = color
 		label.TextColor3 = color
-
 		destroyBtn.TextColor3 = color
-		draggableBtn.TextColor3 = color
-		autoBtn.TextColor3 = color
+
+		if not draggable then
+			draggableBtn.TextColor3 = color
+		end
+		
+		if not auto then
+			autoBtn.TextColor3 = color
+		end
 
 		task.wait()
 	end
