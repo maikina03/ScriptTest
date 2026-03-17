@@ -240,3 +240,54 @@ end)
 UserInputService.TouchEnded:Connect(function()
 	endDrag()
 end)
+local autoBtn = Instance.new("TextButton")
+autoBtn.Parent = container
+autoBtn.Size = UDim2.new(0,60,0,30)
+autoBtn.Position = UDim2.new(baseX,40,baseY,-40)
+autoBtn.Text = "Auto"
+autoBtn.TextScaled = true
+autoBtn.BackgroundColor3 = Color3.fromRGB(0,200,200)
+Instance.new("UICorner",autoBtn).CornerRadius = UDim.new(0,10)
+local auto = false
+local direction = 1 -- 1 = derecha, -1 = izquierda
+
+autoBtn.MouseButton1Click:Connect(function()
+	auto = not auto
+	
+	if auto then
+		autoBtn.BackgroundColor3 = Color3.fromRGB(0,255,255)
+	else
+		autoBtn.BackgroundColor3 = Color3.fromRGB(0,200,200)
+	end
+end)
+
+-- Loop automático
+task.spawn(function()
+	while true do
+		if auto and #scripts > 1 then
+			
+			task.wait(5)
+			
+			-- Guardar actual
+			scripts[index] = codeBox.Text
+			
+			-- Cambiar índice con rebote
+			index += direction
+			
+			if index >= #scripts then
+				index = #scripts
+				direction = -1
+			elseif index <= 1 then
+				index = 1
+				direction = 1
+			end
+			
+			-- Actualizar UI
+			actualizarLabel()
+			codeBox.Text = scripts[index]
+			
+		else
+			task.wait(0.5)
+		end
+	end
+end)
