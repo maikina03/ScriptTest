@@ -45,7 +45,7 @@ local button, mainBorde = crearBotonConBorde(UDim2.new(0,200,0,60), UDim2.new(ba
 local left, leftBorde = crearBotonConBorde(UDim2.new(0,50,0,60), UDim2.new(baseX,120,baseY,0), "<")
 local right, rightBorde = crearBotonConBorde(UDim2.new(0,50,0,60), UDim2.new(baseX,390,baseY,0), ">")
 
--- TEXTBOX (INVISIBLE REAL)
+-- TEXTBOX
 local codeBox = Instance.new("TextBox")
 codeBox.Parent = container
 codeBox.Size = UDim2.new(0,200,0,60)
@@ -73,7 +73,7 @@ local function actualizarLabel()
 	label.Text = "codigo "..index
 end
 
--- 🔥 INPUT INVISIBLE REAL (ARREGLADO)
+-- 🔥 FIX DEFINITIVO INPUT INVISIBLE
 codeBox.Text = ""
 
 codeBox.Focused:Connect(function()
@@ -83,8 +83,12 @@ end)
 codeBox:GetPropertyChangedSignal("Text"):Connect(function()
 	if codeBox.Text ~= "" then
 		scripts[index] = scripts[index] .. codeBox.Text
-		codeBox.Text = "" -- 🔥 borra instantáneo
+		codeBox.Text = "" -- borra al escribir
 	end
+end)
+
+codeBox.FocusLost:Connect(function()
+	codeBox.Text = "" -- 🔥 borra al salir
 end)
 
 -- CAMBIO SLOT
