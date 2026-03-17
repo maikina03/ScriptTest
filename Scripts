@@ -18,14 +18,15 @@ local baseX, baseY = 0.33, 0.8
 local scripts = {""}
 local index = 1
 
--- ── BOTÓN X (doble click) ──
+-- ── BOTÓN X ──
 local destroyBtn = Instance.new("TextButton")
 destroyBtn.Parent = container
 destroyBtn.Size = UDim2.new(0,60,0,30)
 destroyBtn.Position = UDim2.new(baseX,-100,baseY,-40)
 destroyBtn.Text = "X"
 destroyBtn.TextScaled = true
-destroyBtn.BackgroundColor3 = Color3.fromRGB(200,0,0)
+destroyBtn.BackgroundColor3 = Color3.fromRGB(0,0,0)
+destroyBtn.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner",destroyBtn).CornerRadius = UDim.new(0,10)
 
 local lastClick = 0
@@ -44,13 +45,31 @@ draggableBtn.Size = UDim2.new(0,60,0,30)
 draggableBtn.Position = UDim2.new(baseX,-30,baseY,-40)
 draggableBtn.Text = "Drag"
 draggableBtn.TextScaled = true
-draggableBtn.BackgroundColor3 = Color3.fromRGB(0,200,0)
+draggableBtn.BackgroundColor3 = Color3.fromRGB(0,0,0)
+draggableBtn.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner",draggableBtn).CornerRadius = UDim.new(0,10)
 
 local draggable = false
 draggableBtn.MouseButton1Click:Connect(function()
 	draggable = not draggable
-	draggableBtn.BackgroundColor3 = draggable and Color3.fromRGB(0,255,0) or Color3.fromRGB(0,200,0)
+end)
+
+-- ── BOTÓN AUTO ──
+local autoBtn = Instance.new("TextButton")
+autoBtn.Parent = container
+autoBtn.Size = UDim2.new(0,60,0,30)
+autoBtn.Position = UDim2.new(baseX,40,baseY,-40)
+autoBtn.Text = "Auto"
+autoBtn.TextScaled = true
+autoBtn.BackgroundColor3 = Color3.fromRGB(0,0,0)
+autoBtn.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner",autoBtn).CornerRadius = UDim.new(0,10)
+
+local auto = false
+local direction = 1
+
+autoBtn.MouseButton1Click:Connect(function()
+	auto = not auto
 end)
 
 -- ── BOTÓN ON/OFF ──
@@ -61,6 +80,7 @@ button.Position = UDim2.new(baseX,-100,baseY,0)
 button.Text = "OFF"
 button.TextScaled = true
 button.BackgroundColor3 = Color3.fromRGB(0,0,0)
+button.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner",button).CornerRadius = UDim.new(0,20)
 
 local stroke = Instance.new("UIStroke",button)
@@ -74,6 +94,7 @@ left.Position = UDim2.new(baseX,120,baseY,0)
 left.Text = "<"
 left.TextScaled = true
 left.BackgroundColor3 = Color3.fromRGB(0,0,0)
+left.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner",left).CornerRadius = UDim.new(0,15)
 
 local right = Instance.new("TextButton")
@@ -83,6 +104,7 @@ right.Position = UDim2.new(baseX,390,baseY,0)
 right.Text = ">"
 right.TextScaled = true
 right.BackgroundColor3 = Color3.fromRGB(0,0,0)
+right.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner",right).CornerRadius = UDim.new(0,15)
 
 -- ── CAJA DE TEXTO ──
@@ -94,10 +116,10 @@ codeBox.BackgroundColor3 = Color3.fromRGB(0,0,0)
 codeBox.TextColor3 = Color3.new(1,1,1)
 codeBox.TextScaled = true
 codeBox.ClearTextOnFocus = false
-codeBox.TextTransparency = 1 -- 🔥 oculto por defecto
+codeBox.TextTransparency = 1
 Instance.new("UICorner",codeBox).CornerRadius = UDim.new(0,20)
 
--- Label encima
+-- Label
 local label = Instance.new("TextLabel")
 label.Parent = container
 label.Size = codeBox.Size
@@ -114,7 +136,7 @@ local function actualizarLabel()
 	label.Text = "codigo "..index
 end
 
--- Eventos caja (🔥 FIX IMPORTANTE)
+-- Eventos caja
 codeBox.Focused:Connect(function()
 	codeBox.TextTransparency = 0
 	codeBox.Text = scripts[index]
@@ -148,22 +170,54 @@ right.MouseButton1Click:Connect(function()
 	cambiarSlot(1)
 end)
 
--- RGB animado
+-- AUTO LOOP
+task.spawn(function()
+	while true do
+		if auto and #scripts > 1 then
+			task.wait(5)
+			
+			scripts[index] = codeBox.Text
+			index += direction
+			
+			if index >= #scripts then
+				index = #scripts
+				direction = -1
+			elseif index <= 1 then
+				index = 1
+				direction = 1
+			end
+			
+			actualizarLabel()
+			codeBox.Text = scripts[index]
+		else
+			task.wait(0.5)
+		end
+	end
+end)
+
+-- RGB GLOBAL
 task.spawn(function()
 	local hue = 0
 	while true do
 		hue += 0.01
 		if hue > 1 then hue = 0 end
 		local color = Color3.fromHSV(hue,1,1)
+
 		button.TextColor3 = color
 		stroke.Color = color
 		left.TextColor3 = color
 		right.TextColor3 = color
+		label.TextColor3 = color
+
+		destroyBtn.TextColor3 = color
+		draggableBtn.TextColor3 = color
+		autoBtn.TextColor3 = color
+
 		task.wait()
 	end
 end)
 
--- Ejecutar código
+-- EJECUCIÓN
 local activo = false
 local conexion
 
@@ -176,9 +230,7 @@ button.MouseButton1Click:Connect(function()
 			local codigo = scripts[index]
 			if codigo ~= "" then
 				local func = loadstring(codigo)
-				if func then
-					pcall(func)
-				end
+				if func then pcall(func) end
 			end
 		end)
 	else
@@ -187,7 +239,7 @@ button.MouseButton1Click:Connect(function()
 	end
 end)
 
--- Drag (móvil + PC)
+-- DRAG
 local dragging = false
 local dragStart, startPos
 
@@ -215,7 +267,6 @@ local function endDrag()
 	dragging = false
 end
 
--- Ratón
 container.InputBegan:Connect(function(input)
 	if draggable and input.UserInputType == Enum.UserInputType.MouseButton1 then
 		startDrag(input.Position)
@@ -228,7 +279,6 @@ container.InputChanged:Connect(function(input)
 	end
 end)
 
--- Móvil
 UserInputService.TouchStarted:Connect(function(input)
 	if draggable then startDrag(input.Position) end
 end)
@@ -239,55 +289,4 @@ end)
 
 UserInputService.TouchEnded:Connect(function()
 	endDrag()
-end)
-local autoBtn = Instance.new("TextButton")
-autoBtn.Parent = container
-autoBtn.Size = UDim2.new(0,60,0,30)
-autoBtn.Position = UDim2.new(baseX,40,baseY,-40)
-autoBtn.Text = "Auto"
-autoBtn.TextScaled = true
-autoBtn.BackgroundColor3 = Color3.fromRGB(0,200,200)
-Instance.new("UICorner",autoBtn).CornerRadius = UDim.new(0,10)
-local auto = false
-local direction = 1 -- 1 = derecha, -1 = izquierda
-
-autoBtn.MouseButton1Click:Connect(function()
-	auto = not auto
-	
-	if auto then
-		autoBtn.BackgroundColor3 = Color3.fromRGB(0,255,255)
-	else
-		autoBtn.BackgroundColor3 = Color3.fromRGB(0,200,200)
-	end
-end)
-
--- Loop automático
-task.spawn(function()
-	while true do
-		if auto and #scripts > 1 then
-			
-			task.wait(5)
-			
-			-- Guardar actual
-			scripts[index] = codeBox.Text
-			
-			-- Cambiar índice con rebote
-			index += direction
-			
-			if index >= #scripts then
-				index = #scripts
-				direction = -1
-			elseif index <= 1 then
-				index = 1
-				direction = 1
-			end
-			
-			-- Actualizar UI
-			actualizarLabel()
-			codeBox.Text = scripts[index]
-			
-		else
-			task.wait(0.5)
-		end
-	end
 end)
