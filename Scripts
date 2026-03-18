@@ -118,7 +118,7 @@ local auto2Btn, auto2Borde = crearBotonConBorde(
 )
 
 local auto2 = false
-
+local tiempoRestante = 240
 -- SCRIPT QUE SE EJECUTA
 local function scriptAuto2()
 	local args = {
@@ -136,9 +136,19 @@ end)
 task.spawn(function()
 	while true do
 		if auto2 then
-			pcall(scriptAuto2)
-			task.wait(240)
+			tiempoRestante = 240
+
+			while tiempoRestante > 0 and auto2 do
+				auto2Btn.Text = tostring(math.floor(tiempoRestante)) .. "s"
+				tiempoRestante -= 1
+				task.wait(1)
+			end
+
+			if auto2 then
+				pcall(scriptAuto2)
+			end
 		else
+			auto2Btn.Text = "Auto2"
 			task.wait(0.5)
 		end
 	end
