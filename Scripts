@@ -232,3 +232,55 @@ task.spawn(function()
 		task.wait()
 	end
 end)
+
+
+-- ================= AUTO2 =================
+
+local auto2Btn, auto2Borde = crearBotonConBorde(
+	UDim2.new(0,60,0,30),
+	UDim2.new(baseX,40,baseY,-80), -- más arriba que Auto
+	"Auto2"
+)
+
+local auto2 = false
+
+-- 🔥 TU SCRIPT VA AQUÍ
+local function scriptAuto2()
+	-- EJEMPLO:
+	-- print("Auto2 funcionando")
+
+	local args = {
+    [1] = "BuyAll"
+}
+
+game:GetService("ReplicatedStorage").Remotes.Stock:FireServer(unpack(args))
+
+-- BOTÓN
+auto2Btn.MouseButton1Click:Connect(function()
+	auto2 = not auto2
+end)
+
+-- LOOP CADA 4 MINUTOS
+task.spawn(function()
+	while true do
+		if auto2 then
+			pcall(scriptAuto2)
+			task.wait(240) -- ⏱ 4 minutos
+		else
+			task.wait(0.5)
+		end
+	end
+end)
+
+-- ================= RGB =================
+task.spawn(function()
+	while true do
+		if auto2Btn and auto2Borde then
+			local color = Color3.fromHSV(tick()%5/5,1,1)
+
+			auto2Btn.TextColor3 = auto2 and Color3.fromRGB(0,255,0) or color
+			auto2Borde.BackgroundColor3 = color
+		end
+		task.wait()
+	end
+end)
