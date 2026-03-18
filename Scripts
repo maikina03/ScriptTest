@@ -1,107 +1,166 @@
-local player = game.Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
+-- ================= VARIABLES =================
+local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
+local player = Players.LocalPlayer
 
-local gui = Instance.new("ScreenGui")
-gui.Parent = playerGui
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+gui.Name = "MenuUI"
 
-local container = Instance.new("Frame")
-container.Size = UDim2.new(1,0,1,0)
-container.BackgroundTransparency = 1
-container.Parent = gui
+local baseX = 0.5
+local baseY = 0.5
 
-local baseX, baseY = 0.33, 0.8
+local activo = false
+local conexion = nil
+
 local scripts = {""}
 local index = 1
 
--- BOTÓN CON BORDE
+-- ================= FUNCION BOTON CON BORDE =================
 local function crearBotonConBorde(size, pos, text)
-	local borde = Instance.new("Frame")
-	borde.Size = UDim2.new(size.X.Scale, size.X.Offset+4, size.Y.Scale, size.Y.Offset+4)
-	borde.Position = UDim2.new(pos.X.Scale, pos.X.Offset-2, pos.Y.Scale, pos.Y.Offset-2)
+	local borde = Instance.new("Frame", gui)
+	borde.Size = size + UDim2.new(0,6,0,6)
+	borde.Position = pos - UDim2.new(0,3,0,3)
+	borde.BackgroundColor3 = Color3.new(1,0,0)
 	borde.BorderSizePixel = 0
-	borde.Parent = container
-	Instance.new("UICorner", borde).CornerRadius = UDim.new(0,12)
 
-	local btn = Instance.new("TextButton")
+	local btn = Instance.new("TextButton", gui)
 	btn.Size = size
 	btn.Position = pos
+	btn.BackgroundColor3 = Color3.new(0,0,0)
 	btn.Text = text
-	btn.TextSize = 16
-	btn.BackgroundColor3 = Color3.fromRGB(0,0,0)
-	btn.TextColor3 = Color3.new(1,1,1)
-	btn.Parent = container
-	Instance.new("UICorner", btn).CornerRadius = UDim.new(0,12)
+	btn.TextScaled = true
+	btn.BorderSizePixel = 0
 
 	return btn, borde
 end
 
--- BOTONES
-local destroyBtn, destroyBorde = crearBotonConBorde(UDim2.new(0,60,0,30), UDim2.new(baseX,-100,baseY,-40), "X")
-local draggableBtn, dragBorde = crearBotonConBorde(UDim2.new(0,60,0,30), UDim2.new(baseX,-30,baseY,-40), "Drag")
-local autoBtn, autoBorde = crearBotonConBorde(UDim2.new(0,60,0,30), UDim2.new(baseX,40,baseY,-40), "Auto")
-local button, mainBorde = crearBotonConBorde(UDim2.new(0,200,0,60), UDim2.new(baseX,-100,baseY,0), "OFF")
-local left, leftBorde = crearBotonConBorde(UDim2.new(0,50,0,60), UDim2.new(baseX,120,baseY,0), "<")
-local right, rightBorde = crearBotonConBorde(UDim2.new(0,50,0,60), UDim2.new(baseX,390,baseY,0), ">")
+-- ================= BOTONES =================
+local button, mainBorde = crearBotonConBorde(
+	UDim2.new(0,120,0,40),
+	UDim2.new(baseX,-60,baseY,0),
+	"OFF"
+)
 
--- TEXTBOX
-local codeBox = Instance.new("TextBox")
-codeBox.Parent = container
-codeBox.Size = UDim2.new(0,200,0,60)
-codeBox.Position = UDim2.new(baseX,180,baseY,0)
-codeBox.BackgroundColor3 = Color3.fromRGB(0,0,0)
-codeBox.Text = ""
-codeBox.TextTransparency = 1
-Instance.new("UICorner",codeBox).CornerRadius = UDim.new(0,12)
+local left, leftBorde = crearBotonConBorde(
+	UDim2.new(0,40,0,40),
+	UDim2.new(baseX,-110,baseY,0),
+	"<"
+)
 
-local strokeBox = Instance.new("UIStroke", codeBox)
-strokeBox.Thickness = 2
+local right, rightBorde = crearBotonConBorde(
+	UDim2.new(0,40,0,40),
+	UDim2.new(baseX,70,baseY,0),
+	">"
+)
 
--- LABEL
-local label = Instance.new("TextLabel")
-label.Parent = container
-label.Size = codeBox.Size
-label.Position = codeBox.Position
-label.BackgroundTransparency = 1
-label.Text = "codigo 1"
-label.TextSize = 16
-label.ZIndex = codeBox.ZIndex + 1
+local destroyBtn, destroyBorde = crearBotonConBorde(
+	UDim2.new(0,60,0,30),
+	UDim2.new(baseX,-100,baseY,-40),
+	"X"
+)
 
-local function actualizarLabel()
-	label.Text = "codigo "..index
+local draggableBtn, dragBorde = crearBotonConBorde(
+	UDim2.new(0,60,0,30),
+	UDim2.new(baseX,-30,baseY,-40),
+	"Drag"
+)
+
+local autoBtn, autoBorde = crearBotonConBorde(
+	UDim2.new(0,60,0,30),
+	UDim2.new(baseX,40,baseY,-40),
+	"Auto"
+)
+
+-- 🔥 NUEVO AUTO2
+local auto2Btn, auto2Borde = crearBotonConBorde(
+	UDim2.new(0,60,0,30),
+	UDim2.new(baseX,40,baseY,-80),
+	"Auto2"
+)
+
+-- ================= TEXTBOX =================
+local box = Instance.new("TextBox", gui)
+box.Size = UDim2.new(0,200,0,40)
+box.Position = UDim2.new(baseX,-100,baseY,50)
+box.Text = ""
+box.PlaceholderText = "Codigo 1"
+box.BackgroundColor3 = Color3.new(0,0,0)
+box.TextScaled = true
+box.ClearTextOnFocus = true
+
+-- ================= FUNCIONES =================
+local function cambiarSlot(dir)
+	scripts[index] = box.Text
+	index = index + dir
+
+	if index < 1 then index = 1 end
+	if index > #scripts then
+		table.insert(scripts, "")
+	end
+
+	box.Text = scripts[index]
+	box.PlaceholderText = "Codigo "..index
 end
 
--- INPUT INVISIBLE
-codeBox.Text = ""
-
-codeBox.Focused:Connect(function()
-	codeBox.Text = ""
+left.MouseButton1Click:Connect(function()
+	cambiarSlot(-1)
 end)
 
-codeBox:GetPropertyChangedSignal("Text"):Connect(function()
-	if codeBox.Text ~= "" then
-		scripts[index] = scripts[index] .. codeBox.Text
-		codeBox.Text = ""
+right.MouseButton1Click:Connect(function()
+	cambiarSlot(1)
+end)
+
+-- ================= ON/OFF =================
+button.MouseButton1Click:Connect(function()
+	activo = not activo
+	button.Text = activo and "ON" or "OFF"
+
+	if activo then
+		conexion = RunService.Heartbeat:Connect(function()
+			pcall(function()
+				loadstring(scripts[index])()
+			end)
+		end)
+	else
+		if conexion then
+			conexion:Disconnect()
+			conexion = nil
+		end
 	end
 end)
 
-codeBox.FocusLost:Connect(function()
-	codeBox.Text = ""
+-- ================= DRAG =================
+local dragging = false
+local draggable = false
+
+draggableBtn.MouseButton1Click:Connect(function()
+	draggable = not draggable
 end)
 
--- CAMBIO SLOT
-local function cambiarSlot(d)
-	index += d
-	if index < 1 then index = #scripts
-	elseif index > #scripts then table.insert(scripts,"") end
-	actualizarLabel()
-end
+gui.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.Touch then
+		if draggable then dragging = true end
+	end
+end)
 
-left.MouseButton1Click:Connect(function() cambiarSlot(-1) end)
-right.MouseButton1Click:Connect(function() cambiarSlot(1) end)
+gui.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.Touch then
+		dragging = false
+	end
+end)
 
--- AUTO
+gui.InputChanged:Connect(function(input)
+	if dragging and input.UserInputType == Enum.UserInputType.Touch then
+		local pos = input.Position
+		for _,v in pairs(gui:GetChildren()) do
+			if v:IsA("GuiObject") then
+				v.Position = UDim2.new(0,pos.X,0,pos.Y)
+			end
+		end
+	end
+end)
+
+-- ================= AUTO =================
 local auto = false
 local direction = 1
 
@@ -122,32 +181,32 @@ task.spawn(function()
 	end
 end)
 
--- DRAG
-local draggable = false
-draggableBtn.MouseButton1Click:Connect(function()
-	draggable = not draggable
+-- ================= AUTO2 =================
+local auto2 = false
+
+local function scriptAuto2()
+	local args = {
+	    [1] = "BuyAll"
+	}
+	game:GetService("ReplicatedStorage").Remotes.Stock:FireServer(unpack(args))
+end
+
+auto2Btn.MouseButton1Click:Connect(function()
+	auto2 = not auto2
 end)
 
-local dragging = false
-local dragStart
-
-UserInputService.TouchStarted:Connect(function(i)
-	if draggable then dragging = true dragStart = i.Position end
-end)
-
-UserInputService.TouchMoved:Connect(function(i)
-	if dragging then
-		local delta = i.Position - dragStart
-		container.Position += UDim2.new(0,delta.X,0,delta.Y)
-		dragStart = i.Position
+task.spawn(function()
+	while true do
+		if auto2 then
+			pcall(scriptAuto2)
+			task.wait(240)
+		else
+			task.wait(0.5)
+		end
 	end
 end)
 
-UserInputService.TouchEnded:Connect(function()
-	dragging = false
-end)
-
--- X BOTÓN (FIX FINAL)
+-- ================= X (OCULTAR / DESTRUIR) =================
 local visible = true
 local lastClick = 0
 
@@ -155,26 +214,22 @@ destroyBtn.MouseButton1Click:Connect(function()
 	local now = tick()
 
 	if now - lastClick < 0.3 then
-		-- 🔴 APAGAR SCRIPT
 		if activo then
 			activo = false
 			button.Text = "OFF"
-			if conexion then
-				conexion:Disconnect()
-				conexion = nil
-			end
+			if conexion then conexion:Disconnect() conexion = nil end
 		end
 
-		-- ⏳ ESPERA Y DESTRUCCIÓN
 		task.delay(1, function()
 			gui:Destroy()
 		end)
-
 	else
 		visible = not visible
-		for _,v in pairs(container:GetChildren()) do
+		for _,v in pairs(gui:GetChildren()) do
 			if v ~= destroyBtn and v ~= destroyBorde then
-				v.Visible = visible
+				if v:IsA("GuiObject") then
+					v.Visible = visible
+				end
 			end
 		end
 	end
@@ -182,29 +237,7 @@ destroyBtn.MouseButton1Click:Connect(function()
 	lastClick = now
 end)
 
--- ON/OFF
-activo = false
-conexion = nil
-
-button.MouseButton1Click:Connect(function()
-	activo = not activo
-
-	if activo then
-		button.Text = "ON"
-		conexion = RunService.Heartbeat:Connect(function()
-			local codigo = scripts[index]
-			if codigo ~= "" then
-				local f = loadstring(codigo)
-				if f then pcall(f) end
-			end
-		end)
-	else
-		button.Text = "OFF"
-		if conexion then conexion:Disconnect() conexion = nil end
-	end
-end)
-
--- RGB
+-- ================= RGB =================
 task.spawn(function()
 	local h = 0
 	while true do
@@ -216,10 +249,10 @@ task.spawn(function()
 		left.TextColor3 = c
 		right.TextColor3 = c
 		destroyBtn.TextColor3 = c
-		label.TextColor3 = c
 
 		draggableBtn.TextColor3 = draggable and Color3.fromRGB(0,255,0) or c
 		autoBtn.TextColor3 = auto and Color3.fromRGB(0,255,0) or c
+		auto2Btn.TextColor3 = auto2 and Color3.fromRGB(0,255,0) or c
 
 		mainBorde.BackgroundColor3 = c
 		leftBorde.BackgroundColor3 = c
@@ -227,60 +260,8 @@ task.spawn(function()
 		destroyBorde.BackgroundColor3 = c
 		dragBorde.BackgroundColor3 = c
 		autoBorde.BackgroundColor3 = c
-		strokeBox.Color = c
+		auto2Borde.BackgroundColor3 = c
 
-		task.wait()
-	end
-end)
-
-
--- ================= AUTO2 =================
-
-local auto2Btn, auto2Borde = crearBotonConBorde(
-	UDim2.new(0,60,0,30),
-	UDim2.new(baseX,40,baseY,-80), -- más arriba que Auto
-	"Auto2"
-)
-
-local auto2 = false
-
--- 🔥 TU SCRIPT VA AQUÍ
-local function scriptAuto2()
-	-- EJEMPLO:
-	-- print("Auto2 funcionando")
-
-	local args = {
-    [1] = "BuyAll"
-}
-
-game:GetService("ReplicatedStorage").Remotes.Stock:FireServer(unpack(args))
-
--- BOTÓN
-auto2Btn.MouseButton1Click:Connect(function()
-	auto2 = not auto2
-end)
-
--- LOOP CADA 4 MINUTOS
-task.spawn(function()
-	while true do
-		if auto2 then
-			pcall(scriptAuto2)
-			task.wait(240) -- ⏱ 4 minutos
-		else
-			task.wait(0.5)
-		end
-	end
-end)
-
--- ================= RGB =================
-task.spawn(function()
-	while true do
-		if auto2Btn and auto2Borde then
-			local color = Color3.fromHSV(tick()%5/5,1,1)
-
-			auto2Btn.TextColor3 = auto2 and Color3.fromRGB(0,255,0) or color
-			auto2Borde.BackgroundColor3 = color
-		end
 		task.wait()
 	end
 end)
