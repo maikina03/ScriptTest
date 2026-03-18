@@ -109,6 +109,41 @@ autoBtn.MouseButton1Click:Connect(function()
 	auto = not auto
 end)
 
+-- ================= AUTO2 =================
+
+local auto2Btn, auto2Borde = crearBotonConBorde(
+	UDim2.new(0,60,0,30),
+	UDim2.new(baseX,40,baseY,-80), -- encima del Auto
+	"Auto2"
+)
+
+local auto2 = false
+
+-- SCRIPT QUE SE EJECUTA
+local function scriptAuto2()
+	local args = {
+	    [1] = "BuyAll"
+	}
+	game:GetService("ReplicatedStorage").Remotes.Stock:FireServer(unpack(args))
+end
+
+-- BOTÓN
+auto2Btn.MouseButton1Click:Connect(function()
+	auto2 = not auto2
+end)
+
+-- LOOP (CADA 4 MINUTOS)
+task.spawn(function()
+	while true do
+		if auto2 then
+			pcall(scriptAuto2)
+			task.wait(240)
+		else
+			task.wait(0.5)
+		end
+	end
+end)
+
 task.spawn(function()
 	while true do
 		if auto and #scripts > 1 then
@@ -228,6 +263,10 @@ task.spawn(function()
 		dragBorde.BackgroundColor3 = c
 		autoBorde.BackgroundColor3 = c
 		strokeBox.Color = c
+
+
+        auto2Btn.TextColor3 = auto2 and Color3.fromRGB(0,255,0) or c
+        auto2Borde.BackgroundColor3 = c
 
 		task.wait()
 	end
