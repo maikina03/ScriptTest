@@ -15,7 +15,6 @@ local baseX, baseY = 0.33, 0.8
 local scripts = {""}
 local index = 1
 
--- BOTÓN CON BORDE
 local function crearBotonConBorde(size, pos, text)
 	local borde = Instance.new("Frame")
 	borde.Size = UDim2.new(size.X.Scale, size.X.Offset+4, size.Y.Scale, size.Y.Offset+4)
@@ -38,133 +37,177 @@ local function crearBotonConBorde(size, pos, text)
 end
 
 -- BOTONES
-local destroyBtn, destroyBorde = crearBotonConBorde(UDim2.new(0,60,0,30), UDim2.new(baseX,-100,baseY,-40), "X")
+local destroyBtn, destroyBorde = crearBotonConBorde(UDim2.new(0,60,0,30), UDim2.new(baseX,-100,baseY,-40), "Close")
 local draggableBtn, dragBorde = crearBotonConBorde(UDim2.new(0,60,0,30), UDim2.new(baseX,-30,baseY,-40), "Drag")
 local autoBtn, autoBorde = crearBotonConBorde(UDim2.new(0,60,0,30), UDim2.new(baseX,40,baseY,-40), "Auto")
 local button, mainBorde = crearBotonConBorde(UDim2.new(0,200,0,60), UDim2.new(baseX,-100,baseY,0), "OFF")
 local left, leftBorde = crearBotonConBorde(UDim2.new(0,50,0,60), UDim2.new(baseX,120,baseY,0), "<")
 local right, rightBorde = crearBotonConBorde(UDim2.new(0,50,0,60), UDim2.new(baseX,390,baseY,0), ">")
 
--- TEXTBOX
+-- MOVE
+local moveBtn, moveBorde = crearBotonConBorde(
+	UDim2.new(0,60,0,30),
+	UDim2.new(baseX,40,baseY,-80),
+	"Move"
+)
+
+-- ABRIR PACKS (ajustado)
+	
+local abrirPacksBtn, abrirPacksBorde = crearBotonConBorde(
+	UDim2.new(0,130,0,30), -- ancho largo (cubre X + Drag)
+	UDim2.new(baseX,-100,baseY,-80), -- alineado encima de X
+	"Abrir Packs"
+)
+
+-- BOTONES NUEVOS
+local spyBtn, spyBorde = crearBotonConBorde(
+	UDim2.new(0,60,0,30),
+	UDim2.new(baseX,-30,baseY,-120),
+	"Spy"
+)
+
+local scriptBtn, scriptBorde = crearBotonConBorde(
+	UDim2.new(0,60,0,30),
+	UDim2.new(baseX,40,baseY,-120),
+	"Script"
+)
+
+-- CAJAS
 local codeBox = Instance.new("TextBox")
 codeBox.Parent = container
 codeBox.Size = UDim2.new(0,200,0,60)
 codeBox.Position = UDim2.new(baseX,180,baseY,0)
 codeBox.BackgroundColor3 = Color3.fromRGB(0,0,0)
-codeBox.Text = ""
-codeBox.TextTransparency = 1
-Instance.new("UICorner",codeBox).CornerRadius = UDim.new(0,12)
-
+codeBox.TextWrapped = true
+codeBox.MultiLine = true
+Instance.new("UICorner", codeBox).CornerRadius = UDim.new(0,12)
 local strokeBox = Instance.new("UIStroke", codeBox)
-strokeBox.Thickness = 2
 
--- LABEL
-local label = Instance.new("TextLabel")
-label.Parent = container
-label.Size = codeBox.Size
-label.Position = codeBox.Position
-label.BackgroundTransparency = 1
-label.Text = "codigo 1"
-label.TextSize = 16
-label.ZIndex = codeBox.ZIndex + 1
+local codeBox2 = Instance.new("TextBox")
+codeBox2.Parent = container
+codeBox2.Size = UDim2.new(0,200,0,60)
+codeBox2.Position = UDim2.new(baseX,180,baseY,-70)
+codeBox2.BackgroundColor3 = Color3.fromRGB(0,0,0)
+codeBox2.TextWrapped = true
+codeBox2.MultiLine = true
+Instance.new("UICorner", codeBox2).CornerRadius = UDim.new(0,12)
+local strokeBox2 = Instance.new("UIStroke", codeBox2)
 
-local function actualizarLabel()
-	label.Text = "codigo "..index
-end
-
--- INPUT INVISIBLE
-codeBox.Text = ""
-
-codeBox.Focused:Connect(function()
-	codeBox.Text = ""
-end)
+-- TOGGLES
+local running1 = false
+local running2 = false
 
 codeBox:GetPropertyChangedSignal("Text"):Connect(function()
-	if codeBox.Text ~= "" then
-		scripts[index] = scripts[index] .. codeBox.Text
-		codeBox.Text = ""
-	end
+	scripts[index] = codeBox.Text
 end)
 
-codeBox.FocusLost:Connect(function()
-	codeBox.Text = ""
-end)
+local function actualizarCaja()
+	codeBox.Text = scripts[index] or ""
+end
 
--- CAMBIO SLOT
 local function cambiarSlot(d)
 	index += d
 	if index < 1 then index = #scripts
 	elseif index > #scripts then table.insert(scripts,"") end
-	actualizarLabel()
+	actualizarCaja()
 end
 
 left.MouseButton1Click:Connect(function() cambiarSlot(-1) end)
 right.MouseButton1Click:Connect(function() cambiarSlot(1) end)
 
--- AUTO
 local auto = false
-local direction = 1
-
 autoBtn.MouseButton1Click:Connect(function()
 	auto = not auto
 end)
 
--- ================= AUTO2 =================
-
-local auto2Btn, auto2Borde = crearBotonConBorde(
-	UDim2.new(0,60,0,30),
-	UDim2.new(baseX,40,baseY,-80), -- encima del Auto
-	"Auto2"
-)
-
-local auto2 = false
-local tiempoRestante = 240
--- SCRIPT QUE SE EJECUTA
-local function scriptAuto2()
-	local args = {
-	    [1] = "BuyAll"
-	}
-	game:GetService("ReplicatedStorage").Remotes.Stock:FireServer(unpack(args))
-end
-
--- BOTÓN
-auto2Btn.MouseButton1Click:Connect(function()
-	auto2 = not auto2
-end)
-
--- LOOP (CADA 4 MINUTOS)
 task.spawn(function()
+	local direction = 1
 	while true do
-		if auto2 then
-			tiempoRestante = 240
-
-			while tiempoRestante > 0 and auto2 do
-				auto2Btn.Text = tostring(math.floor(tiempoRestante)) .. "s"
-				tiempoRestante -= 1
-				task.wait(1)
-			end
-
-			if auto2 then
-				pcall(scriptAuto2)
-			end
-		else
-			auto2Btn.Text = "Auto2"
-			task.wait(0.5)
-		end
-	end
-end)
-
-task.spawn(function()
-	while true do
-		if auto and #scripts > 1 then
-			task.wait(5)
+		if auto then
 			cambiarSlot(direction)
 			if index == #scripts then direction = -1
 			elseif index == 1 then direction = 1 end
+			task.wait(2)
 		else
 			task.wait(0.5)
 		end
 	end
+end)
+
+button.MouseButton1Click:Connect(function()
+	running1 = not running1
+	button.Text = running1 and "ON" or "OFF"
+end)
+
+local toggle2, toggle2Borde = crearBotonConBorde(
+	UDim2.new(0,60,0,30),
+	UDim2.new(baseX,390,baseY,-70),
+	"OFF"
+)
+
+toggle2.MouseButton1Click:Connect(function()
+	running2 = not running2
+	toggle2.Text = running2 and "ON" or "OFF"
+end)
+
+RunService.Heartbeat:Connect(function()
+	if running1 then
+		pcall(function()
+			loadstring(codeBox.Text)()
+		end)
+	end
+end)
+
+task.spawn(function()
+	while true do
+		if running2 then
+			pcall(function()
+				loadstring(codeBox2.Text)()
+			end)
+		end
+		task.wait(0.1)
+	end
+end)
+
+-- MOVE (speed 30)
+local moving = false
+local path = {
+	Vector3.new(-620, 6, -100),
+	Vector3.new(-620, 6, -160),
+	Vector3.new(-610, 6, -160),
+	Vector3.new(-610, 6, -100),
+	Vector3.new(-600, 6, -100),
+	Vector3.new(-600, 6, -160),
+	Vector3.new(-590, 6, -160),
+	Vector3.new(-590, 6, -100)
+}
+
+moveBtn.MouseButton1Click:Connect(function()
+	moving = not moving
+	if moving then
+		task.spawn(function()
+			local char = player.Character or player.CharacterAdded:Wait()
+			local humanoid = char:WaitForChild("Humanoid")
+			humanoid.WalkSpeed = 30
+
+			for _, pos in ipairs(path) do
+				if not moving then break end
+				humanoid:MoveTo(pos)
+				humanoid.MoveToFinished:Wait()
+			end
+
+			moving = false
+		end)
+	end
+end)
+
+-- SPY / SCRIPT
+spyBtn.MouseButton1Click:Connect(function()
+	loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-SimpleSpy-Remote-Spy-remake-127839"))()
+end)
+
+scriptBtn.MouseButton1Click:Connect(function()
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/gumanba/Scripts/main/AnimeCardCollection"))()
 end)
 
 -- DRAG
@@ -192,29 +235,16 @@ UserInputService.TouchEnded:Connect(function()
 	dragging = false
 end)
 
--- X BOTÓN (FIX FINAL)
+-- X
 local visible = true
 local lastClick = 0
 
 destroyBtn.MouseButton1Click:Connect(function()
 	local now = tick()
-
 	if now - lastClick < 0.3 then
-		-- 🔴 APAGAR SCRIPT
-		if activo then
-			activo = false
-			button.Text = "OFF"
-			if conexion then
-				conexion:Disconnect()
-				conexion = nil
-			end
-		end
-
-		-- ⏳ ESPERA Y DESTRUCCIÓN
 		task.delay(1, function()
 			gui:Destroy()
 		end)
-
 	else
 		visible = not visible
 		for _,v in pairs(container:GetChildren()) do
@@ -223,33 +253,65 @@ destroyBtn.MouseButton1Click:Connect(function()
 			end
 		end
 	end
-
 	lastClick = now
 end)
 
--- ON/OFF
-activo = false
-conexion = nil
+-- ABRIR PACKS (MISMO)
+local abriendoPacks = false
 
-button.MouseButton1Click:Connect(function()
-	activo = not activo
+abrirPacksBtn.MouseButton1Click:Connect(function()
+	if abriendoPacks then return end
+	abriendoPacks = true
 
-	if activo then
-		button.Text = "ON"
-		conexion = RunService.Heartbeat:Connect(function()
-			local codigo = scripts[index]
-			if codigo ~= "" then
-				local f = loadstring(codigo)
-				if f then pcall(f) end
+	task.spawn(function()
+		local character = player.Character or player.CharacterAdded:Wait()
+		local humanoid = character:WaitForChild("Humanoid")
+		local root = character:WaitForChild("HumanoidRootPart")
+
+		local plot = workspace:WaitForChild("Plots"):WaitForChild("1")
+		local packsFolder = plot:WaitForChild("Packs")
+		local abiertos = {}
+
+		while true do
+			task.wait(0.1)
+
+			local siguiente, prompt, pos
+			local distMin = math.huge
+
+			for _, packId in pairs(packsFolder:GetChildren()) do
+				for _, pack in pairs(packId:GetChildren()) do
+					if not abiertos[pack] then
+						local p = pack:FindFirstChildOfClass("ProximityPrompt", true)
+						if p and p.Parent:IsA("BasePart") then
+							local d = (root.Position - p.Parent.Position).Magnitude
+							if d < distMin then
+								distMin = d
+								siguiente = pack
+								prompt = p
+								pos = p.Parent.Position
+							end
+						end
+					end
+				end
 			end
-		end)
-	else
-		button.Text = "OFF"
-		if conexion then conexion:Disconnect() conexion = nil end
-	end
+
+			if siguiente then
+				humanoid:MoveTo(pos)
+				if distMin <= 5 then
+					fireproximityprompt(prompt)
+					abiertos[siguiente] = true
+					task.wait(0.5)
+				end
+			else
+				break
+			end
+		end
+
+		abriendoPacks = false
+	end)
 end)
 
--- RGB
+-- RGB UNIFICADO
 task.spawn(function()
 	local h = 0
 	while true do
@@ -257,14 +319,19 @@ task.spawn(function()
 		if h > 1 then h = 0 end
 		local c = Color3.fromHSV(h,1,1)
 
-		button.TextColor3 = c
+		button.TextColor3 = running1 and Color3.fromRGB(0,255,0) or c
+		toggle2.TextColor3 = running2 and Color3.fromRGB(0,255,0) or c
+		moveBtn.TextColor3 = moving and Color3.fromRGB(0,255,0) or c
+		autoBtn.TextColor3 = auto and Color3.fromRGB(0,255,0) or c
+		draggableBtn.TextColor3 = draggable and Color3.fromRGB(0,255,0) or c
+		abrirPacksBtn.TextColor3 = abriendoPacks and Color3.fromRGB(0,255,0) or c
+
+		spyBtn.TextColor3 = c
+		scriptBtn.TextColor3 = c
+
+		destroyBtn.TextColor3 = c
 		left.TextColor3 = c
 		right.TextColor3 = c
-		destroyBtn.TextColor3 = c
-		label.TextColor3 = c
-
-		draggableBtn.TextColor3 = draggable and Color3.fromRGB(0,255,0) or c
-		autoBtn.TextColor3 = auto and Color3.fromRGB(0,255,0) or c
 
 		mainBorde.BackgroundColor3 = c
 		leftBorde.BackgroundColor3 = c
@@ -272,11 +339,14 @@ task.spawn(function()
 		destroyBorde.BackgroundColor3 = c
 		dragBorde.BackgroundColor3 = c
 		autoBorde.BackgroundColor3 = c
+		moveBorde.BackgroundColor3 = c
+		abrirPacksBorde.BackgroundColor3 = c
+		spyBorde.BackgroundColor3 = c
+		scriptBorde.BackgroundColor3 = c
+		toggle2Borde.BackgroundColor3 = c
+
 		strokeBox.Color = c
-
-
-        auto2Btn.TextColor3 = auto2 and Color3.fromRGB(0,255,0) or c
-        auto2Borde.BackgroundColor3 = c
+		strokeBox2.Color = c
 
 		task.wait()
 	end
